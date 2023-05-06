@@ -1,6 +1,6 @@
 # YaCy Expert
 
-Inspired by the vision of the talks, "[Search Engines History and Future](https://yacy.net/material/20160430_Search_Engines_Of_The_Future_OpenTechSummit_2016.pdf)" and "[Search Engines of the Future](https://yacy.net/material/20160904_The_Future_of_Search_QtCon_2016.key)" this project aims to bring that vision of a "future search engine" to life. The prediction of both talks had been:
+Inspired by the vision of the talks, "[Search Engines History and Future](https://yacy.net/material/20160430_Search_Engines_Of_The_Future_OpenTechSummit_2016.pdf)" (FOSSASIA Singapore 2016 [video](https://www.youtube.com/watch?v=6_rMjXjD_4Y)) and "[Search Engines of the Future](https://yacy.net/material/20160904_The_Future_of_Search_QtCon_2016.key)" (QtCon Berlin 2016) this project aims to bring that vision of a "future search engine" to life. The prediction of both talks had been:
 
 *"Future search engines will answer to all questions!"*
 
@@ -45,11 +45,54 @@ Although designed for powerful hardware (macOS or Linux with GPU), we are also w
 (this is a stub)
 
 This will require the following steps:
-- install a LLM backend (here is one option, works everywhere):
+
+### Provide knowledge as Vector Search Index
+
+We use a Faiss index here. The index is provided by the following scripts:
+
+```
+knowledge_indexing.py
+knowledge_search_server.py
+```
+
+The first script generates a Faiss index, the second one provides access to the index with a flask web server.
+
+#### Place a YaCy data dump in the `knowledge` subdirectory
+
+Run your YaCy instance and generate a search index. This search index defines the corpus of the knowledge that you want to use to enrich YaCy Expert using RAG. When you believe that your index is well-curated, do an index export:
+- click on "Index Export/Import" (`/IndexExport_p.html`)
+- keep the default export settings and use "Full Data Records"; click on "Export" and wait until the export is finished.
+- Copy the exported `.jsonlist` file from YaCy `DATA/EXPORT/` path to the `knowledge` path inside this repository
+
+#### Run the Faiss indexing to turn the data dumps into vector index files
+
+The Faiss index is applied on all `.jsonlist` files inside the `knowledge` path.
+
+- run `python3 knowledge_indexing.py`. This is a long-running process which takes about 1 hour for 10000 index entries - depends on the speed of your computer. A multi-million-sized index may take several days or weeks!
+
+The produced index files with extension `.faiss` are also inside the `knowledge` path. Running the `knowledge_indexing.py` script again will not compute already produced faiss index files again.
+
+#### (optional) Run a Faiss Search Server (for testing)
+
+The Faiss index shall be used as RAG context provider, but we provide a like-YaCy search API that can run separately!
+
+- run `python3 knowledge_search_server.py`. This will set up a web server which provides a search API at `http://localhost:8094/yacysearch.json`. You can search i.e. with the url [`http://localhost:8094/yacysearch.json?query=one%20two%20three&count=3`](http://localhost:8094/yacysearch.json?query=one%20two%20three&count=3) -- this is the same path as in YaCy. You can use the same html front-ends for the search.
+
+
+
+
+### Provide a LLM backend
+
+The 'industrial' way to get the LLM backend is to use the OpenAI API.
+We want to be independed from a commercial solution but our own solution shall be compatible to the OpenAI API. However, to prove that this way is compatible, one of the options here must actually be the commercial binding to the OpenAI interface. That means we have two options:
+
+#### Configure access to OpenAI API
+
+#### Install our own LLM backend
   - copy a language model in the `model` subdirectory
   - build the docker image containing the llama.cpp framework
   - start the llama.cpp docker container with the OpenAI API
-- provide a YaCy data dump in the `knowledge` subdirectory
-- run the Faiss indexing to turn the data dumps into vector index files
-- build the web interface of YaCy Expert
-- run YaCy Expert by starting the web server backend
+
+### build the web interface of YaCy Expert
+
+### run YaCy Expert by starting the web server backend

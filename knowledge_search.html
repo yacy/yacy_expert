@@ -1,0 +1,78 @@
+<html>
+<head>
+    <!-- hosted location: http://localhost:8094/api/yacysearch.html -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Expert Knowledge Search</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script language="javascript" type="text/javascript" src="./t.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="./lit.css" media="screen" />
+</head>
+
+<body class="m0">
+    <div class="c">
+        <h1>Expert Knowledge Search</h1>
+
+        <div class="row">
+            <input type="text" name="query" id="query" class="card w-75" autofocus="autofocus" onFocus="this.select()" onClick="document.getElementById('startRecord').value=0;document.getElementById('query').value='';"/>&nbsp;
+            <input type="hidden" name="startRecord" id="startRecord" value="0"/>
+            <button id="search" onclick="return search()" class="btn primary">search</button>
+        </div>
+
+        <!-- template for result list used by t.js -->
+        <script type="t/template" id="resulttemplate">
+            {{=results}}
+            {{@items}}
+            <div class="panel panel-default">
+                <h4 class="panel-title"><a href="{{=_val.link}}" target="_blank">{{=_val.title}}</a></h4>
+                <p>{{=_val.description}}</p>
+                <p><a href="{{=_val.link}}" target="_blank">{{=_val.link}}</a><br>{{=_val.sizename}}</p>
+            </div>
+            {{/@items}}
+        </script>
+        <div id="result"></div>
+
+        <!-- template for pagination bar used by t.js -->
+        <script type="t/template" id="paginationtemplate">
+            <div class="btn-group" role="group" aria-label="pagination">
+                {{@items}}
+                    <button type="button" class="btn {{_val.same}}primary{{/_val.same}} btn-xs" onClick="document.getElementById('startRecord').value={{=_val.startRecord}}; search();">{{=_val.page}}</button>
+                {{/@items}}
+            </div>
+        </script>
+        <div id="pagination"></div>
+    </div>
+
+    <script>
+        // XHR request to evaluate search request
+        function search() {
+            const query = document.querySelector('#query').value;
+            const startRecord = parseInt(document.querySelector('#startRecord').value); // starts at 0
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', 'http://localhost:8094/yacysearch.json?startRecord=' + startRecord + '&query=' + query);
+            xhr.setRequestHeader('Content-type', 'application/json');
+            xhr.responseType = 'json';
+            xhr.send();
+            xhr.onload = function() {
+                var channel = xhr.response.channels[0];
+                // result list 
+                document.getElementById("result").innerHTML = new t(document.getElementById('resulttemplate').innerHTML).render(channel);
+                // page navigation
+                document.getElementById("pagination").innerHTML = new t(document.getElementById('paginationtemplate').innerHTML).render({"items": channel.pagenav});
+            }
+        }
+
+        // event listener on query field to trigger search button when enter is hit
+        var input = document.getElementById("query");
+        input.addEventListener("keyup", function(event) {if (event.keyCode === 13) {return search();}});
+
+        // parse url to do the query if a query appears in the url params part
+        const urlParams = new URLSearchParams(window.location.search);
+        const queryParam = urlParams.get('query');
+        if (queryParam) {
+            document.querySelector('#query').value = queryParam;
+            search();
+        }
+    </script>
+</body>
+</html>

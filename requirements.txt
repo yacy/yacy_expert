@@ -1,0 +1,5 @@
+argparse
+faiss-cpu
+flask
+numpy
+torch

@@ -77,9 +77,7 @@ The produced index files with extension `.faiss` are also inside the `knowledge`
 The Faiss index shall be used as RAG context provider, but we provide a like-YaCy search API that can run separately!
 
 - run `python3 knowledge_search_server.py`. This will set up a web server which provides a search API at `http://localhost:8094/yacysearch.json`. You can search i.e. with the url [`http://localhost:8094/yacysearch.json?query=one%20two%20three&count=3`](http://localhost:8094/yacysearch.json?query=one%20two%20three&count=3) -- this is the same path as in YaCy. You can use the same html front-ends for the search.
-
-
-
+- open `knowledge_search_html/index.html`. This will provide you with a very simple test search interface which uses the knowledge_search_server to retrieve documents from the Faiss Vector Index.
 
 ### Provide a LLM backend
 

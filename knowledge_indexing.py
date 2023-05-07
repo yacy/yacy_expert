@@ -8,12 +8,7 @@ import numpy as np
 from transformers import BertModel, BertTokenizer
 from concurrent.futures import ThreadPoolExecutor
 import gzip
-
-# Load pre-trained model tokenizer and model
-model_name = "bert-base-multilingual-uncased"
-tokenizer = BertTokenizer.from_pretrained(model_name)
-model = BertModel.from_pretrained(model_name)
-dimension = 768  # Dimensionality of BERT embeddings
+import configparser
 
 def knowledge_path():
     # Load all FAISS indexes and index files from the knowledge path
@@ -26,7 +21,7 @@ def knowledge_path():
 
 # Function to embed a text using BERT
 # An embedding is a vector of size 768
-def embedding(text):
+def embedding(text, tokenizer, model):
     # make downcase of given text; the model is trained on lowercased text
     text = text.lower()
     # Tokenize the text
@@ -88,17 +83,55 @@ def parse_json_lines(lines, batch_size=1000):
         # this concurrency is needed for very large files; it preserves the order of the lines (important!)
         return [record for future in futures for record in future.result()]
 
+def load_ini(ini_file):
+    print(f"Loading ini file: {ini_file}")
+    if os.path.exists(ini_file):
+        with open(ini_file, 'r', encoding='utf-8') as file:
+            config = configparser.ConfigParser()
+            config.read(ini_file)
+            print(f"Loaded ini file: {ini_file}")
+
+            if 'DEFAULT' in config:
+                ini = config['DEFAULT']
+            else:
+                ini = {}
+            if 'dimension' in ini:
+                dimension = ini['dimension']
+            else:
+                dimension = 768
+            print(f"dimension: {dimension}")
+            if 'model_name' in ini:
+                model_name = ini['model_name']
+            else:
+                model_name = "bert-base-multilingual-uncased"
+            print(f"model_name: {model_name}")  
+    else:
+        # model_name = "dbmdz/bert-base-german-uncased"
+        model_name = "bert-base-multilingual-uncased"
+        dimension = 768
+
+    return model_name, dimension
+
 def process_file(jsonl_file):
     # this function reads a YaCy export file and creates a FAISS index file.
     if jsonl_file.endswith('.gz'):
         faiss_index_file = jsonl_file[:-3] + '.faiss'
+        faiss_ini_file = jsonl_file[:-3] + '.ini'
     else:
         faiss_index_file = jsonl_file + '.faiss'
+        faiss_ini_file = jsonl_file + '.ini'
 
     if os.path.exists(faiss_index_file):
         print(f"FAISS index for {jsonl_file} already exists. Skipping.")
         return
     
+    # load the ini file if it exists
+    model_name, dimension = load_ini(faiss_ini_file)
+
+    # Load a pre-trained model tokenizer and model
+    tokenizer = BertTokenizer.from_pretrained(model_name)
+    model = BertModel.from_pretrained(model_name)
+
     # read jsonl file and parse it into a list of json objects
     text_list = read_text_list(jsonl_file)
     print(f"Read {len(text_list)} lines from {jsonl_file}")
@@ -113,7 +146,7 @@ def process_file(jsonl_file):
         for i in range(0, len(json_records)):
             record = json_records[i]
             record_text = record['text_t']
-            future = executor.submit(embedding, record_text)
+            future = executor.submit(embedding, record_text, tokenizer, model)
             futures.append(future)
 
             # Log progress every 100 lines
@@ -154,8 +187,12 @@ def process_file(jsonl_file):
 # Process all .jsonl/.flatjson files
 if __name__ == "__main__":
     knowledge = knowledge_path()
+
     print(f"Processing directory: {knowledge}")
     for file in os.listdir(knowledge):
         if file.endswith('.jsonl') or file.endswith('.flatjson') or file.endswith('.jsonl.gz') or file.endswith('.flatjson.gz'): # .flatjson is the yacy export format
             print(f"Processing file: {file}")
-            process_file(os.path.join(knowledge, file))
+            path = os.path.join(knowledge, file)
+
+            # run the indexing process
+            process_file(path)

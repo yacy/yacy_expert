@@ -44,7 +44,12 @@ Although designed for powerful hardware (macOS or Linux with GPU), we are also w
 
 (this is a stub)
 
-This will require the following steps:
+You must go through the following steps:
+- provide data for a vector search
+- do indexing of the provided data
+- provide a LLM backend
+- run the yacy_expert backend server
+- open the chat web page to talk to the expert
 
 ### Provide knowledge as Vector Search Index
 
@@ -68,7 +73,13 @@ Run your YaCy instance and generate a search index. This search index defines th
 
 The Faiss index is applied on all `.jsonlist` files inside the `knowledge` path.
 
-- run `python3 knowledge_indexing.py`. This is a long-running process which takes about 1 hour for 10000 index entries - depends on the speed of your computer. A multi-million-sized index may take several days or weeks!
+- indexing uses a [BERT](https://blog.research.google/2018/11/open-sourcing-bert-state-of-art-pre.html) language model to tokenize texts and to compute embeddings. Such embeddings can be optimized by choosing the right BERT model. The default model [`bert-base-multilingual-uncased`](https://huggingface.co/bert-base-multilingual-uncased) can be replaced with a custom model that can be declared in a `.ini` file. For each `jsonlist`/`jsonl` file you may create a file `<filename>.jsonlist.ini` with declaration of a wanted model, e.g. for a [german BERT model](https://huggingface.co/dbmdz/bert-base-german-uncased):
+```
+[DEFAULT]
+model_name = dbmdz/bert-base-german-uncased
+dimension = 768
+``` 
+- run `python3 knowledge_indexing.py`. This is a long-running process which takes about 1 hour for 10000 index entries - depends on the speed of your computer (best speed is 4x of this). A multi-million-sized index may take several days or weeks!
 
 The produced index files with extension `.faiss` are also inside the `knowledge` path. Running the `knowledge_indexing.py` script again will not compute already produced faiss index files again.
 
@@ -76,7 +87,7 @@ The produced index files with extension `.faiss` are also inside the `knowledge`
 
 The Faiss index shall be used as RAG context provider, but we provide a like-YaCy search API that can run separately!
 
-- run `python3 knowledge_search_server.py`. This will set up a web server which provides a search API at `http://localhost:8094/yacysearch.json`. You can search i.e. with the url [`http://localhost:8094/yacysearch.json?query=one%20two%20three&count=3`](http://localhost:8094/yacysearch.json?query=one%20two%20three&count=3) -- this is the same path as in YaCy. You can use the same html front-ends for the search.
+- run `python3 knowledge_search.py`. This will set up a web server which provides a search API at `http://localhost:8094/yacysearch.json`. You can search i.e. with the url [`http://localhost:8094/yacysearch.json?query=one%20two%20three&count=3`](http://localhost:8094/yacysearch.json?query=one%20two%20three&count=3) -- this is the same path as in YaCy. You can use the same html front-ends for the search.
 - open `knowledge_search_html/index.html`. This will provide you with a very simple test search interface which uses the knowledge_search_server to retrieve documents from the Faiss Vector Index.
 
 ### Provide a LLM backend

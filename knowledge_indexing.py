@@ -127,6 +127,11 @@ def process_file(jsonl_file):
     
     # load the ini file if it exists
     model_name, dimension = load_ini(faiss_ini_file)
+    dimension = int(dimension)
+    print(f"Creating FAISS index for {jsonl_file} with model {model_name} and dimension {dimension}")
+
+    # Create a FAISS index
+    faiss_index = faiss.IndexFlatL2(dimension)
 
     # Load a pre-trained model tokenizer and model
     tokenizer = BertTokenizer.from_pretrained(model_name)
@@ -176,9 +181,9 @@ def process_file(jsonl_file):
 
     # Convert list of vectors to a FAISS compatible format
     vectors = np.array(vectors).astype('float32')
-    # Create a FAISS index
-    faiss_index = faiss.IndexFlatL2(dimension)
-    faiss_index.add(vectors)  # Add vectors to the index
+
+    # Add vectors to the index
+    faiss_index.add(vectors)  
 
     # Save the index to a file
     faiss.write_index(faiss_index, jsonl_file + '.faiss')

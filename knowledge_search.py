@@ -71,52 +71,56 @@ for index_name, faiss_index in faiss_indexes.items():
         combined_results.sort(key=lambda x: x['distance'])
         return combined_results[:k]
 
-    # Endpoint for search
-    @app.route('/yacysearch.json', methods=['GET', 'POST'])
-    def search():
-        
-        if request.method == 'GET':
-            query = request.args.get('query', '')
-            count = int(request.args.get('count', '1'))
-        elif request.method == 'POST':
-            data = request.get_json()
-            query = data.get('query', '')
-            count = int(data.get('count', '1'))
+# Endpoint for search
+@app.route('/yacysearch.json', methods=['GET', 'POST'])
+def yacysearch():
+    #print(f"Request: {request}")
+    if request.method == 'GET':
+        query = request.args.get('query', '')
+        count = int(request.args.get('count', '3'))
+    elif request.method == 'POST':
+        data = request.get_json()
+        #print(f"Data: {data}")
+        query = data.get('query', '')
+        count = int(data.get('count', '3'))
 
-        if query:
-            # Search across all indexes
-            results = search_across_indexes(query, count)
-
-            # Translate the results to the yacysearch.json format
-            yacy_results = {
-                "channels": [
-                    {
-                        "title": "YaCy Expert Vector Search",
-                        "description": "Items from YaCy Search Engine Dumps as Vector Search Results",
-                        "startIndex": "0",
-                        "itemsPerPage": str(count),
-                        "searchTerms": query,
-                        "items": []
-                    }
-                ]
+    # Translate the results to the yacysearch.json format
+    yacy_results = {
+        "channels": [
+            {
+                "title": "YaCy Expert Vector Search",
+                "description": "Items from YaCy Search Engine Dumps as Vector Search Results",
+                "startIndex": "0",
+                "itemsPerPage": str(count),
+                "searchTerms": query,
+                "items": []
             }
-            for result in results:
-                text_t = result.get('text_t', '')
-                if (len(text_t) > 0):
-                    item = {
-                    "title": result.get('title', ''),
-                    "link": result.get('url', result.get('url_s', '')),
-                    "description": text_t,
-                    "pubDate": "",
-                    "image": result.get('image', ''),
-                    "ranking": str(result.get('distance', ''))
-                }
-                yacy_results['channels'][0]['items'].append(item)
+        ]
+    }
 
-        # Pretty-print the result
-        pretty_json = json.dumps(yacy_results, indent=4)
-        response = Response(pretty_json, content_type="application/json; charset=utf-8")
-        return response
+    print(f"Searching for '{query}' with count {count}")
+    if query:
+        # Search across all indexes
+        results = search_across_indexes(query=query, k=count)
+
+        for result in results:
+            text_t = result.get('text_t', '')
+            if (len(text_t) > 0):
+                item = {
+                "title": result.get('title', ''),
+                "link": result.get('url', result.get('url_s', '')),
+                "description": text_t,
+                "pubDate": "",
+                "image": result.get('image', ''),
+                "distance": result.get('distance', '')
+            }
+            yacy_results['channels'][0]['items'].append(item)
+
+    # Pretty-print the result
+    pretty_json = json.dumps(yacy_results, indent=4)
+    
+    response = Response(pretty_json, content_type="application/json; charset=utf-8")
+    return response
 
 if __name__ == '__main__':
     # Set up the argument parser

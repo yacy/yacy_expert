@@ -41,14 +41,17 @@ def read_text_list(jsonl_file):
     # This function returns only the lines that are valid json.
     # We expect that all json objects have a 'text_t' field that contains the text to be indexed.
     lines = []
-    print(f"Starting to read {jsonl_file}")
 
     def read(file):
         line_count = 0
         start_time = time.time()
         for line in file:
+            # alternating every second line the json object must either:
+            # - start with {"index":{}} or
+            # - contain a 'text_t' field
             if line.startswith('{"index":'): continue # if line starts with {"index":{}} skip it
-            if 'text_t' not in line: continue # if line does not contain 'text_t', skip it
+            if 'text_t' not in line: continue # if line does not contain 'text_t', skip
+
             lines.append(line)
             line_count += 1
 
@@ -56,32 +59,14 @@ def read_text_list(jsonl_file):
             if line_count % 100000 == 0:
                 elapsed_time = time.time() - start_time
                 print(f"Read {line_count} lines in {elapsed_time:.2f} seconds")
-        print(f"Finished reading {line_count} valid document lines from {jsonl_file}")
 
-    if jsonl_file.endswith('.gz'):
-        with gzip.open(jsonl_file, 'rt', encoding='utf-8') as file: read(file)
-    else:
-        with open(jsonl_file, 'r', encoding='utf-8') as file: read(file)
+    if os.path.exists(jsonl_file):
+        if jsonl_file.endswith('.gz'):
+            with gzip.open(jsonl_file, 'rt', encoding='utf-8') as file: read(file)
+        else:
+            with open(jsonl_file, 'r', encoding='utf-8') as file: read(file)
 
     return lines
-
-def parse_json_lines(lines, batch_size=1000):
-    def parse_batch(batch):
-        json_records = []
-        for line in batch:
-            try:
-                record = json.loads(line)
-                # the json object should have a 'text_t' field that contains the text to be indexed
-                json_records.append(record)
-            except json.JSONDecodeError:
-                pass  # Optionally log parse errors or invalid lines
-        return json_records
-
-    print(f"Parsing {len(lines)} lines in batches of {batch_size}")
-    with ThreadPoolExecutor() as executor:
-        futures = [executor.submit(parse_batch, lines[i:i + batch_size]) for i in range(0, len(lines), batch_size)]
-        # this concurrency is needed for very large files; it preserves the order of the lines (important!)
-        return [record for future in futures for record in future.result()]
 
 def load_ini(ini_file):
     print(f"Loading ini file: {ini_file}")
@@ -112,14 +97,19 @@ def load_ini(ini_file):
 
     return model_name, dimension
 
-def process_file(jsonl_file):
-    # this function reads a YaCy export file and creates a FAISS index file.
+def get_faiss_and_ini_file(jsonl_file):
+    # this function returns the faiss index file and the ini file for a given jsonl file
     if jsonl_file.endswith('.gz'):
         faiss_index_file = jsonl_file[:-3] + '.faiss'
         faiss_ini_file = jsonl_file[:-3] + '.ini'
     else:
         faiss_index_file = jsonl_file + '.faiss'
         faiss_ini_file = jsonl_file + '.ini'
+    return faiss_index_file, faiss_ini_file
+
+def process_file(jsonl_file):
+    # this function reads a YaCy export file and creates a FAISS index file.
+    faiss_index_file, faiss_ini_file = get_faiss_and_ini_file(jsonl_file)
 
     if os.path.exists(faiss_index_file):
         print(f"FAISS index for {jsonl_file} already exists. Skipping.")
@@ -139,17 +129,27 @@ def process_file(jsonl_file):
 
     # read jsonl file and parse it into a list of json objects
     text_list = read_text_list(jsonl_file)
+
+    # in case that the text_list is empty, we just skip this file
+    if len(text_list) == 0:
+        print(f"Skipping empty file {jsonl_file}")
+        return
+
     print(f"Read {len(text_list)} lines from {jsonl_file}")
-    json_records = parse_json_lines(text_list)
-    print(f"Parsed {len(json_records)} json objects from {jsonl_file}")
 
     # concurrent embedding computation
     start_time = time.time()
-    print(f"Starting to compute embeddings for {len(json_records)} records")
     with ThreadPoolExecutor() as executor:
         futures = []
-        for i in range(0, len(json_records)):
-            record = json_records[i]
+        for i in range(0, len(text_list)):
+            text_line = text_list[i]
+            # parse the json line
+            try:
+                record = json.loads(text_line)
+            except json.JSONDecodeError:
+                 # this makes the file unusable for the FAISS index becuase the FAISS index would not match the line number any more
+                print(f"Error parsing json line: {text_line}")
+                continue # we just continue here to make identification of more errors possible. it would be correct to fail and exit here.
             record_text = record['text_t']
             future = executor.submit(embedding, record_text, tokenizer, model)
             futures.append(future)
@@ -157,14 +157,14 @@ def process_file(jsonl_file):
             # Log progress every 100 lines
             if (i+1) % 10000 == 0:
                 elapsed = time.time() - start_time
-                estimated_total = elapsed / (i+1) * len(json_records)
+                estimated_total = elapsed / (i+1) * len(text_list)
                 remaining = estimated_total - elapsed
-                print(f"Submitted {i+1}/{len(json_records)} records to concurrent executor. Estimated time remaining: {remaining/60:.2f} minutes.")
+                print(f"Submitted {i+1}/{len(text_list)} records to concurrent executor. Estimated time remaining: {remaining/60:.2f} minutes.")
 
         # wait for all futures to finish
         vectors = []
         start_time = time.time()
-        print(f"Waiting for {len(futures)} futures to finish")
+        print(f"Waiting for {len(futures)} futures to finish, please be patient.")
         for i in range(0, len(futures)):
             future = futures[i]
             vector = future.result()
@@ -173,11 +173,11 @@ def process_file(jsonl_file):
             # Log progress every 100 lines
             if (i+1) % 100 == 0:
                 elapsed = time.time() - start_time
-                estimated_total = elapsed / (i+1) * len(json_records)
+                estimated_total = elapsed / (i+1) * len(futures)
                 remaining = estimated_total - elapsed
-                print(f"Computed {i+1}/{len(json_records)} embeddings. Estimated time remaining: {remaining/60:.2f} minutes.")
+                print(f"Computed {i+1}/{len(futures)} embeddings. Estimated time remaining: {remaining/60:.2f} minutes;  {(i+1)/elapsed*60:.2f} embeddings per minute.")
 
-    print(f"Finished computing embeddings for {len(json_records)} records, computing FAISS index")
+    print(f"Finished computing embeddings for {len(futures)} records, computing FAISS index")
 
     # Convert list of vectors to a FAISS compatible format
     vectors = np.array(vectors).astype('float32')
@@ -186,8 +186,8 @@ def process_file(jsonl_file):
     faiss_index.add(vectors)  
 
     # Save the index to a file
-    faiss.write_index(faiss_index, jsonl_file + '.faiss')
-    print(f"Finished and saved FAISS index to {jsonl_file + '.faiss'}")
+    faiss.write_index(faiss_index, faiss_index_file)
+    print(f"Finished and saved FAISS index to {faiss_index_file}")
 
 # Process all .jsonl/.flatjson files
 if __name__ == "__main__":
@@ -195,7 +195,8 @@ if __name__ == "__main__":
 
     print(f"Processing directory: {knowledge}")
     for file in os.listdir(knowledge):
-        if file.endswith('.jsonl') or file.endswith('.flatjson') or file.endswith('.jsonl.gz') or file.endswith('.flatjson.gz'): # .flatjson is the yacy export format
+        if  file.endswith('.jsonl') or file.endswith('.jsonl.gz') or \
+            file.endswith('.flatjson') or file.endswith('.flatjson.gz'):  # .flatjson is the yacy export format
             print(f"Processing file: {file}")
             path = os.path.join(knowledge, file)
 

@@ -14,31 +14,31 @@ CORS(app)
 def load_faiss_indexes(knowledge_path):
     index = {}
     datas = {}
-    jsons = {}
     ini_names = {}  # Add a dictionary to store the ini names
     for faiss_name in os.listdir(knowledge_path):
         if faiss_name.endswith(".faiss"):
-            jsonl_name = faiss_name[:-6]
-            index_name = jsonl_name[:-6]
-            ini_name = jsonl_name + '.ini'
+            jsonl_name = faiss_name[:-6] # ok, this is the jsonl name without possible .gz suffix
+            index_name = jsonl_name[:jsonl_name.rfind('.')]
+            ini_name = jsonl_name + '.ini' #ok, this is the ini name
             index_file = os.path.join(knowledge_path, faiss_name)
             print(f"Loading index file: {index_file}")
-            jsonl_file = os.path.join(knowledge_path, jsonl_name)
-            print(f"Loading jsonl file: {jsonl_file}")
 
+            # the jsonl file might either be one with or without .gz suffix
+            if os.path.exists(os.path.join(knowledge_path, jsonl_name + '.gz')):
+                jsonl_name = jsonl_name + '.gz'
+            jsonl_file = os.path.join(knowledge_path, jsonl_name)
+
+            print(f"Loading jsonl file: {jsonl_file}")
             index[index_name] = faiss.read_index(index_file)
+            print(f"Size of faiss index file {index_name}: {index[index_name].ntotal}")
             datas[index_name] = knowledge_indexing.read_text_list(jsonl_file) # these are just text lines
-            jsons[index_name] = [json.loads(line) for line in datas[index_name]] # these are json objects
+            print(f"Size of index  data file {jsonl_file}: {len(datas[index_name])}")
             ini_names[index_name] = os.path.join(knowledge_path, ini_name) # Store the ini name for each index
     
-            # validate the loaded indexes, both must have the same size
-            print(f"Loaded {index[index_name].ntotal} indexes   from {index_file}")
-            print(f"Loaded {len(jsons[index_name])} documents from {jsonl_file}")
-
-    return index, datas, jsons, ini_names  # Return the ini_names dictionary
+    return index, datas, ini_names  # Return the ini_names dictionary
 
 # Load all FAISS indexes and data from the data path
-faiss_indexes, jsonl_text, index_jsons, ini_names = load_faiss_indexes(knowledge_indexing.knowledge_path())
+faiss_indexes, jsonl_text, ini_names = load_faiss_indexes(knowledge_indexing.knowledge_path())
 
 # Create a cache for model_name, tokenizer, and model
 model_cache = {}
@@ -52,24 +52,25 @@ for index_name, faiss_index in faiss_indexes.items():
     # Cache the tokenizer and model
     model_cache[index_name] = (tokenizer, model)
 
-    # Function to search across all indexes
-    def search_across_indexes(query, k):
-        combined_results = []
-        for index_name, faiss_index in faiss_indexes.items():
-            tokenizer, model = model_cache[index_name]
+# Function to search across all indexes
+def search_across_indexes(query, k):
+    combined_results = []
+    for index_name, faiss_index in faiss_indexes.items():
+        tokenizer, model = model_cache[index_name]
 
-            # Embed the query
-            query_vector = knowledge_indexing.embedding(query, tokenizer, model)
-            query_vector = query_vector.reshape(1, -1).astype('float32')
+        # Embed the query
+        query_vector = knowledge_indexing.embedding(query, tokenizer, model)
+        query_vector = query_vector.reshape(1, -1).astype('float32')
 
-            distances, indices = faiss_index.search(query_vector, k)
-            for i, idx in enumerate(indices[0]):
-                if idx != -1:  # Ignore invalid indices
-                    result = index_jsons[index_name][idx]
-                    result['distance'] = float(distances[0][i])
-                    combined_results.append(result)
-        combined_results.sort(key=lambda x: x['distance'])
-        return combined_results[:k]
+        distances, indices = faiss_index.search(query_vector, k)
+        for i, idx in enumerate(indices[0]):
+            if idx != -1:  # Ignore invalid indices
+                text_line = jsonl_text[index_name][idx]
+                result = json.loads(text_line)
+                result['distance'] = float(distances[0][i])
+                combined_results.append(result)
+    combined_results.sort(key=lambda x: x['distance'])
+    return combined_results[:k]
 
 # Endpoint for search
 @app.route('/yacysearch.json', methods=['GET', 'POST'])

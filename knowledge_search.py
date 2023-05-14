@@ -41,22 +41,32 @@ def load_faiss_indexes(knowledge_path):
 faiss_indexes, jsonl_text, ini_names = load_faiss_indexes(knowledge_indexing.knowledge_path())
 
 # Create a cache for model_name, tokenizer, and model
-model_cache = {}
+model_cache_for_model_name = {}
+model_cache_for_index_name = {}
 for index_name, faiss_index in faiss_indexes.items():
     print(f"Loading model for {index_name}")
     ini_name = ini_names[index_name]  # Get the ini_name for the current index
     # Load the tokenizer and model for this index
     model_name, dimension = knowledge_indexing.load_ini(ini_name)
-    tokenizer = BertTokenizer.from_pretrained(model_name)
-    model = BertModel.from_pretrained(model_name)
-    # Cache the tokenizer and model
-    model_cache[index_name] = (tokenizer, model)
+
+    # the model can already exist in the model_cache
+    # search trough the model_cache and check if the model_name is already there
+    # if yes, then use the existing model, otherwise load the model
+    if model_name in model_cache_for_model_name:
+        tokenizer, model = model_cache_for_model_name[model_name]
+    else:
+        tokenizer = BertTokenizer.from_pretrained(model_name)
+        model = BertModel.from_pretrained(model_name)
+        # Cache the tokenizer and model
+        model_cache_for_model_name[model_name] = (tokenizer, model)
+    
+    model_cache_for_index_name[index_name] = (tokenizer, model)
 
 # Function to search across all indexes
 def search_across_indexes(query, k):
     combined_results = []
     for index_name, faiss_index in faiss_indexes.items():
-        tokenizer, model = model_cache[index_name]
+        tokenizer, model = model_cache_for_index_name[index_name]
 
         # Embed the query
         query_vector = knowledge_indexing.embedding(query, tokenizer, model)
@@ -68,6 +78,7 @@ def search_across_indexes(query, k):
                 text_line = jsonl_text[index_name][idx]
                 result = json.loads(text_line)
                 result['distance'] = float(distances[0][i])
+                result['index'] = index_name
                 combined_results.append(result)
     combined_results.sort(key=lambda x: x['distance'])
     return combined_results[:k]
@@ -108,13 +119,14 @@ def yacysearch():
             text_t = result.get('text_t', '')
             if (len(text_t) > 0):
                 item = {
-                "title": result.get('title', ''),
-                "link": result.get('url', result.get('url_s', '')),
-                "description": text_t,
-                "pubDate": "",
-                "image": result.get('image', ''),
-                "distance": result.get('distance', '')
-            }
+                    "title": result.get('title', ''),
+                    "link": result.get('url', result.get('url_s', '')),
+                    "description": text_t,
+                    "pubDate": "",
+                    "image": result.get('image', ''),
+                    "distance": result.get('distance', ''),
+                    "index": result.get('index', '')
+                }
             yacy_results['channels'][0]['items'].append(item)
 
     # Pretty-print the result
@@ -127,7 +139,8 @@ if __name__ == '__main__':
     # Set up the argument parser
     parser = argparse.ArgumentParser(description='Server for YaCy Expert Vector Search from Faiss Indexes.')
     parser.add_argument('--port', type=int, default=8094, help='Port to run the Flask app on.')
+    parser.add_argument('--host', type=str, default='0.0.0.0', help='Host to run the Flask app on.')
     args = parser.parse_args()
-    app.run(debug=False, port=args.port)
+    app.run(debug=False, port=args.port, host=args.host)
 
 #curl -X POST "http://localhost:8094/yacysearch.json" -H "Content-Type: application/json" -d '{"query": "one two three", "count": "1"}'

@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>YaCy Expert</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs/themes/prism.css">
+</head>
+
+<body style="background-color: #343a40;">
+    <div class="container-fluid d-flex flex-column justify-content-between" style="height: 100vh;">
+        <div class="d-flex align-items-center mb-2">
+            <div id="subtitle" style="color: #2C81BC;">
+                <img id="logo" src="YaCyLogo_60ppi.png" height="46" alt="YaCy" class="mr-2">
+                <img id="logo" src="Expert_32.png" alt="Expert" class="mr-2" style="vertical-align: -19px;">
+            </div>
+        </div>
+        <div id="chatWindow" class="flex-grow-1 w-100 border border-white rounded p-4 mb-4" style="overflow-y: scroll; background-color: #f8f9fa; color: #2C81BC;"></div>
+        <div class="mb-2 w-100">
+            <textarea id="inputField" placeholder="Your question here..." rows="3" class="w-100 p-2 border border-white rounded" style="background-color: #f8f9fa; color: #2C81BC;"></textarea>
+        </div>
+        <div class="d-flex w-100">
+            <input type="file" id="fileInput" style="display: none;" />
+            <button id="sendButton" onclick="generateResponse()" class="flex-grow-1 p-2 bg-secondary text-white border-0 rounded">Ask YaCy Expert</button>
+        </div>
+        <div class="text-center p-2" style="background-color: #343a40; color: #2C81BC;">
+            No guarantee for the accuracy of the answers
+        </div>
+    </div>
+
+    <script>
+        apihost = 'http://localhost:5001';
+        document.getElementById('inputField').addEventListener('keydown', function(event) {
+            if (event.shiftKey && event.key === 'Enter') {
+                event.preventDefault();
+                let cursorPos = this.selectionStart;
+                let currentValue = this.value;
+                this.value = currentValue.substring(0, cursorPos) + "\n" + currentValue.substring(cursorPos);
+                this.selectionStart = cursorPos + 1;
+                this.selectionEnd = cursorPos + 1;
+            }
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                generateResponse();
+            }
+        });
+
+        var messages = [{ role: 'system', content: 'You are YaCy-Expert, a very polite and helpuf chatbot. If you receive a context to a question, use the given context for the answer if that context is helpful, otherwise ignore it.' }];
+
+        async function generateResponse() {
+               var inputText = document.getElementById('inputField').value;
+            var fileInput = document.getElementById('fileInput');
+            var sendButton = document.getElementById('sendButton');
+            var attachButton = document.getElementById('attachButton');
+            sendButton.disabled = true;
+            payload = {
+                model: "gpt-3.5-turbo", temperature: 0.3, max_tokens: 300,
+                messages: [...messages, { role: "user", content: inputText }],
+                stop: ["[/INST]", "<|im_end|>"],
+                stream: true
+            }
+
+            function readFileContent(file) {
+                return new Promise((resolve, reject) => {
+                       const reader = new FileReader();
+                    reader.onload = (event) => resolve(event.target.result);
+                    reader.onerror = (error) => reject(error);
+                    reader.readAsDataURL(file); // or readAsText(file) based on the file type
+                });
+            }
+
+            // Configurable list of strings to be removed if they appear at the end
+            const stringsToRemove = ["[INST]", "<<USER>>", "<</INST>>", "<<SYS>>", "</SYS>>"];
+
+            // Function to remove specific strings from the end of a text
+            function removeStringsFromEnd(text, strings) {
+                for (let str of strings) {
+                    if (text.endsWith(str)) {
+                        // Remove the string from the end
+                        return text.substring(0, text.length - str.length);
+                    }
+                }
+                return text; // Return the original text if no strings are found at the end
+            }
+
+            if (fileInput.files.length > 0) {
+                try {
+                    payload.fileContent = await readFileContent(fileInput.files[0]);
+                    payload.fileName = fileInput.files[0].name
+                } catch (error) {
+                    console.error('Error reading file:', error);
+                }
+            }
+            
+            let chat = document.getElementById('chatWindow');
+            chat.innerHTML += `<div class="mb-2">Du: ${inputText}</div>`;
+            document.getElementById('inputField').value = '';
+            messages.push({ role: "user", content: inputText });
+
+            let response = await fetch(apihost + '/v1/chat/completions', {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(payload),
+              });
+
+            fileInput.value = "";
+            sendButton.disabled = false;
+
+            // Create a div to hold the response
+            let responseDiv = document.createElement('div');
+            responseDiv.classList.add("mb-2");
+            chat.appendChild(responseDiv);
+	
+            if (response.ok) {
+                const reader = response.body.getReader();
+                let decoder = new TextDecoder();
+                let fullOutputText = ""; // Variable to accumulate the full response
+	
+                // Function to process each chunk
+                const processChunk = async () => {
+                    const result = await reader.read();
+                    if (result.done) {
+                        console.log('Stream complete');
+                        messages.push({ role: "assistant", content: fullOutputText });
+                        console.log('Final output text:', fullOutputText); // Debug line
+                        reader.cancel();
+                        return;
+                    }
+
+                    let chunk = decoder.decode(result.value, { stream: true });
+                    console.log('Received chunk:', chunk); // Debug line
+
+                    // Split the chunk by newlines and process each line
+                    let lines = chunk.split('\n');
+                    lines.forEach(line => {
+                        // Remove the 'data: ' prefix from the chunk
+                        line = line.replace(/^data: /, '').trim();
+                        if (line) {
+	                    // Check for the end of stream indicator
+                            if (line === '[DONE]') {
+                                console.log('End of data stream');
+                                return;
+                            }
+                        
+                            try {
+                                let json = JSON.parse(line);
+                                if (json.choices[0].delta.content) {
+                                    let outputText = json.choices[0].delta.content;
+                                    fullOutputText = removeStringsFromEnd(fullOutputText + outputText, stringsToRemove);
+                                    console.log(fullOutputText)
+                                    responseDiv.innerHTML = "Expert: "+ marked.parse(fullOutputText, { sanitize: true });
+                                }
+                            } catch (e) {
+                                console.error('Error parsing JSON:', e);
+                                console.error('Problematic line:', line); // Debug line
+                            }
+                        }
+                    });
+                    // Process the next chunk
+                    processChunk();
+                };
+
+                // Start processing the stream
+                processChunk();
+            } else {
+                console.error(`Error: ${response.status}`);
+                return null;
+            }
+        }
+
+        function chooseFile() {
+            document.getElementById('fileInput').click();
+        }
+      
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs/prism.js"></script>
+</body>
+</html>

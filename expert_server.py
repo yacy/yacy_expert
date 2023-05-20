@@ -16,6 +16,7 @@ YACYSEARCH_HOST = "http://localhost:8094"
 OPENAI_API_HOST = "https://api.openai.com"
 OPENAI_API_KEY  = ""
 RAG_CONTEXT_PREFIX = "If necessary, use the following context to answer the question. If this text does not match the question, ignore it."
+#RAG_CONTEXT_PREFIX = "Wenn nötig, verwende den folgenden Kontext, um die Frage zu beantworten. Wenn dieser Text nicht zur Frage passt, ignorieren Sie ihn."
 
 # overload settings with environment variables in case they are set
 if 'YACYSEARCH_HOST' in os.environ: YACYSEARCH_HOST = os.environ['YACYSEARCH_HOST']
@@ -52,15 +53,12 @@ def proxy():
                     hitcount = len(items)
                     minimum_distance = 70
 
-                    if hitcount > 0 and items[0]['distance'] < minimum_distance:
-                        description = items[0]['description']
-                        title = items[0]['title']
-                        context = context + '\n\n' + RAG_CONTEXT_PREFIX + '\n\n' + description
-                        contextlog = contextlog + "&diams; added RAG document: " + title + "\n"
-                    for i in range(1, min(hitcount, 5)):
+                    for i in range(0, min(hitcount, 5)):
                         if items[i]['distance'] < minimum_distance - (i * 10):
                             description = items[i]['description']
                             title = items[0]['title']
+                            title = title[0] if isinstance(title, list) and len(title) > 0 else str(title)
+                            if len(description) > 600: description = description[:600] + "..."
                             context = context + '\n\n' + description
                             contextlog = contextlog + "&diams; added RAG document: " + title + "\n"
                 
@@ -70,8 +68,9 @@ def proxy():
                     # Handle invalid JSON response from search API
                     print(f"Error: Search API returned invalid JSON: {e}")
 
-                # add the new context to the prompt
-                prompt = prompt + context
+                # add the new context to the prompt if the context length is > 0
+                if len(context) > 0:
+                    prompt = prompt + '\n\n' + RAG_CONTEXT_PREFIX + context
 
             # write back the enriched prompt to the body object
             messages[-1]['content'] = prompt
@@ -100,7 +99,7 @@ def proxy():
         if OPENAI_API_KEY != "": headers['Authorization'] = 'Bearer ' + OPENAI_API_KEY
         conn.request("POST", api_url.path, encoded_body, headers)
         print("sent request to OpenAI API")
-
+        
         # Thread function for reading from the server
         def read_from_upstream():
             resp = conn.getresponse()
@@ -110,6 +109,7 @@ def proxy():
                     t = line.decode('utf-8')
                     print(t)
                     yield line
+                    if t.find("data: [DONE]") != -1: break
                 else:
                     break
 
@@ -120,4 +120,4 @@ def proxy():
         return jsonify({'message': 'Method not supported'}), 405
 
 if __name__ == '__main__':
-    app.run(port=5001, debug=True)
+    app.run(port=5001, host="0.0.0.0", debug=True)

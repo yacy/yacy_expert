@@ -9,15 +9,17 @@ from transformers import BertModel, BertTokenizer, GPT2LMHeadModel, GPT2Tokenize
 from concurrent.futures import ThreadPoolExecutor
 import gzip
 import configparser
+import knowledge_splitter
 
-def knowledge_path():
-    # Load all FAISS indexes and index files from the knowledge path
-    path = 'knowledge'
-    # if the directory_path is empty, try to use the local/parallel yacy export path
-    # if the knowledge path is empty or contains one single file '.gitignore', use the local/parallel yacy export path
-    if not path or (len(os.listdir(path)) == 1 and os.listdir(path)[0] == '.gitignore'):
-        path = '../yacy_search_server/DATA/EXPORT/'
-    return path
+# predefine dictionary for each language model one number which holds the number of characters per token
+chars_per_token = {
+    "bert-base-multilingual-cased": 3.63, # with max_sequence_length = 512; measured on the german wikipedia
+    "bert-base-german-dbmdz-cased": 5.5, # guessed by copilot
+    "gpt2": 1.0, # guessed by copilot
+}
+
+stat_token_count = 0
+stat_text_length = 0
 
 # Function to embed a text using BERT
 # An embedding is a vector of size 768 (mostly)
@@ -26,6 +28,14 @@ def embeddingBERT(text, tokenizer, model, max_length):
     # Tokenize the text
     tokens = tokenizer(text, return_tensors="pt", truncation=True, max_length=max_length)
     #print(f"tokens.input_ids.shape: {tokens.input_ids.shape}") # torch.Size([1, 438])  .. up to 512
+
+    # collect statistics about the token count and text length in case the max_length is not reached
+    token_count = len(tokens.input_ids[0])
+    if token_count > 0 and token_count < max_length :
+        global stat_token_count
+        stat_token_count += len(tokens.input_ids[0])
+        global stat_text_length
+        stat_text_length += len(text)
 
     # compute the hidden states from the BERT model without computing the gradients
     with torch.no_grad(): outputs = model(**tokens) # **tokens is a dictionary of all tokens
@@ -49,6 +59,14 @@ def embeddingGPT2(text, tokenizer, model, max_length):
     # Tokenize text
     tokens = tokenizer(text, return_tensors='pt', truncation=True, max_length=max_length)
     # print(f"tokens.input_ids.shape: {tokens.input_ids.shape}") # torch.Size([1, 876])
+
+    # collect statistics about the token count and text length in case the max_length is not reached
+    token_count = len(tokens.input_ids[0])
+    if token_count > 0 and token_count < max_length :
+        global stat_token_count
+        stat_token_count += len(tokens.input_ids[0])
+        global stat_text_length
+        stat_text_length += len(text)
 
     # Ensure the model returns hidden states
     model.config.output_hidden_states = True
@@ -79,40 +97,6 @@ def embedding(text, model_name, tokenizer, model, max_sequence_length):
     else:
         return embeddingBERT(text, tokenizer, model, max_sequence_length)
 
-def read_text_list(jsonl_file):
-    # This reads a YaCy jsonl/flatjson file that was exported for a elasticsearch bulk import
-    # Because a elasticsearch bulk file has a header line with {"index":{}} for each record
-    # we need to skip those lines.
-    # This function returns only the lines that are valid json.
-    # We expect that all json objects have a 'text_t' field that contains the text to be indexed.
-    lines = []
-
-    def read(file):
-        line_count = 0
-        start_time = time.time()
-        for line in file:
-            # alternating every second line the json object must either:
-            # - start with {"index":{}} or
-            # - contain a 'text_t' field
-            if line.startswith('{"index":'): continue # if line starts with {"index":{}} skip it
-            if 'text_t' not in line: continue # if line does not contain 'text_t', skip
-
-            lines.append(line)
-            line_count += 1
-
-            # Logging progress at regular intervals, e.g., every 100,000 lines
-            if line_count % 100000 == 0:
-                elapsed_time = time.time() - start_time
-                print(f"Read {line_count} lines in {elapsed_time:.2f} seconds")
-
-    if os.path.exists(jsonl_file):
-        if jsonl_file.endswith('.gz'):
-            with gzip.open(jsonl_file, 'rt', encoding='utf-8') as file: read(file)
-        else:
-            with open(jsonl_file, 'r', encoding='utf-8') as file: read(file)
-
-    return lines
-
 def load_ini(ini_file):
     print(f"Loading ini file: {ini_file}")
     if os.path.exists(ini_file):
@@ -138,8 +122,8 @@ def load_ini(ini_file):
     else:
         # choose one from https://huggingface.co/transformers/v4.12.0/pretrained_models.html
         #model_name = "bert-base-german-dbmdz-cased" # do not uncomment, write the name into a ini file instead
-        model_name = "bert-base-multilingual-cased"
-        #model_name = "gpt2"
+        #model_name = "bert-base-multilingual-cased"
+        model_name = "gpt2"
         dimension = 768
 
     return model_name, dimension
@@ -193,7 +177,7 @@ def index_file(jsonl_file):
     print(f"max_sequence_length: {max_sequence_length}")
 
     # read jsonl file and parse it into a list of json objects
-    text_list = read_text_list(jsonl_file)
+    text_list = knowledge_splitter.read_text_list(jsonl_file)
 
     # in case that the text_list is empty, we just skip this file
     if len(text_list) == 0:
@@ -240,7 +224,13 @@ def index_file(jsonl_file):
                 elapsed = time.time() - start_time
                 estimated_total = elapsed / (i+1) * len(futures)
                 remaining = estimated_total - elapsed
-                print(f"Computed {i+1}/{len(futures)} embeddings. Estimated time remaining: {remaining/60:.2f} minutes;  {(i+1)/elapsed*60:.2f} embeddings per minute.")
+                global stat_token_count
+                global stat_text_length
+                if stat_token_count > 0:
+                    chars_per_token = stat_text_length/stat_token_count
+                else:
+                    chars_per_token = 0
+                print(f"Computed {i+1}/{len(futures)} embeddings. Time remaining: {remaining/60:.2f} minutes; {(i+1)/elapsed*60:.2f} embeddings per minute, chars per token: {chars_per_token:.2f}")
 
     print(f"Finished computing embeddings for {len(futures)} records, computing FAISS index")
 
@@ -266,7 +256,7 @@ def index_file(jsonl_file):
 
 # Process all .jsonl/.flatjson files
 if __name__ == "__main__":
-    knowledge = knowledge_path()
+    knowledge = knowledge_splitter.knowledge_path()
 
     print(f"Processing directory for indexing: {knowledge}")
     for file in os.listdir(knowledge):

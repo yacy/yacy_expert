@@ -2,6 +2,7 @@ import os
 import json
 import faiss
 import argparse
+import knowledge_splitter
 import knowledge_indexing
 from flask import Flask, request, jsonify, Response, make_response
 from flask_cors import CORS
@@ -30,14 +31,14 @@ def load_faiss_indexes(knowledge_path):
             print(f"Loading jsonl file: {jsonl_file}")
             index[index_name] = faiss.read_index(index_file)
             print(f"Size of faiss index file {index_name}: {index[index_name].ntotal}")
-            datas[index_name] = knowledge_indexing.read_text_list(jsonl_file) # these are just text lines
+            datas[index_name] = knowledge_splitter.read_text_list(jsonl_file) # these are just text lines
             print(f"Size of index  data file {jsonl_file}: {len(datas[index_name])}")
             ini_names[index_name] = os.path.join(knowledge_path, ini_name) # Store the ini name for each index
     
     return index, datas, ini_names  # Return the ini_names dictionary
 
 # Load all FAISS indexes and data from the data path
-faiss_indexes, jsonl_text, ini_names = load_faiss_indexes(knowledge_indexing.knowledge_path())
+faiss_indexes, jsonl_text, ini_names = load_faiss_indexes(knowledge_splitter.knowledge_path())
 
 # Create a cache for model_name, tokenizer, and model
 model_cache_for_model_name = {}
@@ -119,7 +120,7 @@ def yacysearch():
             if (len(text_t) > 0):
                 item = {
                     "title": result.get('title', ''),
-                    "link": result.get('url', result.get('url_s', '')),
+                    "link": result.get('url', result.get('url_s', result.get('sku', ''))),
                     "description": text_t,
                     "pubDate": "",
                     "image": result.get('image', ''),

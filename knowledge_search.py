@@ -3,7 +3,6 @@ import json
 import faiss
 import argparse
 import knowledge_indexing
-from transformers import BertModel, BertTokenizer
 from flask import Flask, request, jsonify, Response, make_response
 from flask_cors import CORS
 
@@ -55,21 +54,21 @@ for index_name, faiss_index in faiss_indexes.items():
     if model_name in model_cache_for_model_name:
         tokenizer, model = model_cache_for_model_name[model_name]
     else:
-        tokenizer = BertTokenizer.from_pretrained(model_name)
-        model = BertModel.from_pretrained(model_name)
+        tokenizer, model = knowledge_indexing.tokenizer_model_from_name(model_name)
         # Cache the tokenizer and model
         model_cache_for_model_name[model_name] = (tokenizer, model)
     
-    model_cache_for_index_name[index_name] = (tokenizer, model)
+    model_cache_for_index_name[index_name] = (model_name, tokenizer, model)
 
 # Function to search across all indexes
 def search_across_indexes(query, k):
     combined_results = []
     for index_name, faiss_index in faiss_indexes.items():
-        tokenizer, model = model_cache_for_index_name[index_name]
+        model_name, tokenizer, model = model_cache_for_index_name[index_name]
 
         # Embed the query
-        query_vector = knowledge_indexing.embedding(query, tokenizer, model)
+        max_sequence_length = model.config.max_position_embeddings
+        query_vector = knowledge_indexing.embedding(query, model_name, tokenizer, model, max_sequence_length)
         query_vector = query_vector.reshape(1, -1).astype('float32')
 
         distances, indices = faiss_index.search(query_vector, k)

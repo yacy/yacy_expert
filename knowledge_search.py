@@ -40,32 +40,15 @@ def load_faiss_indexes(knowledge_path):
 # Load all FAISS indexes and data from the data path
 faiss_indexes, jsonl_text, ini_names = load_faiss_indexes(knowledge_splitter.knowledge_path())
 
-# Create a cache for model_name, tokenizer, and model
-model_cache_for_model_name = {}
-model_cache_for_index_name = {}
-for index_name, faiss_index in faiss_indexes.items():
-    print(f"Loading model for {index_name}")
-    ini_name = ini_names[index_name]  # Get the ini_name for the current index
-    # Load the tokenizer and model for this index
-    model_name, dimension = knowledge_indexing.load_ini(ini_name)
-
-    # the model can already exist in the model_cache
-    # search trough the model_cache and check if the model_name is already there
-    # if yes, then use the existing model, otherwise load the model
-    if model_name in model_cache_for_model_name:
-        tokenizer, model = model_cache_for_model_name[model_name]
-    else:
-        tokenizer, model = knowledge_indexing.tokenizer_model_from_name(model_name)
-        # Cache the tokenizer and model
-        model_cache_for_model_name[model_name] = (tokenizer, model)
-    
-    model_cache_for_index_name[index_name] = (model_name, tokenizer, model)
+# load ini file if it exists
+knowledge = knowledge_splitter.knowledge_path()
+model_name = knowledge_indexing.load_ini(os.path.join(knowledge, 'knowledge.ini'))
+tokenizer, model = knowledge_indexing.tokenizer_model_from_name(model_name)
 
 # Function to search across all indexes
 def search_across_indexes(query, k):
     combined_results = []
     for index_name, faiss_index in faiss_indexes.items():
-        model_name, tokenizer, model = model_cache_for_index_name[index_name]
 
         # Embed the query
         max_sequence_length = model.config.max_position_embeddings
@@ -144,3 +127,4 @@ if __name__ == '__main__':
     app.run(debug=False, port=args.port, host=args.host)
 
 #curl -X POST "http://localhost:8094/yacysearch.json" -H "Content-Type: application/json" -d '{"query": "one two three", "count": "1"}'
+# or http://localhost:8094/yacysearch.json?q=hello%20my%friend&count=1

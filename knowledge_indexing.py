@@ -6,6 +6,7 @@ import faiss
 import torch
 import numpy as np
 from transformers import BertModel, BertTokenizer, GPT2LMHeadModel, GPT2Tokenizer
+from sentence_transformers import SentenceTransformer
 from concurrent.futures import ThreadPoolExecutor
 import gzip
 import configparser
@@ -54,6 +55,11 @@ def embeddingBERT(text, tokenizer, model, max_length):
     # return the embedding vector
     return embeddings
 
+def embeddingSBERT(text, tokenizer, model, max_length): 
+    model = SentenceTransformer('distiluse-base-multilingual-cased-v1')
+    embedding = model.encode([text]).astype('float32')
+    return embedding
+
 # Function to embed a text using GPT2
 def embeddingGPT2(text, tokenizer, model, max_length):
     # Tokenize text
@@ -94,6 +100,8 @@ def embedding(text, model_name, tokenizer, model, max_sequence_length):
     # get specific embedding for the model
     if model_name.startswith('gpt2'):
         return embeddingGPT2(text, tokenizer, model, max_sequence_length)
+    elif model_name == 'distiluse-base-multilingual-cased-v1':
+        return embeddingSBERT(text, tokenizer, model, max_sequence_length)
     else:
         return embeddingBERT(text, tokenizer, model, max_sequence_length)
 
@@ -104,29 +112,22 @@ def load_ini(ini_file):
             config = configparser.ConfigParser()
             config.read(ini_file)
             print(f"Loaded ini file: {ini_file}")
-
             if 'DEFAULT' in config:
                 ini = config['DEFAULT']
             else:
                 ini = {}
-            if 'dimension' in ini:
-                dimension = ini['dimension']
-            else:
-                dimension = 768
-            print(f"dimension: {dimension}")
             if 'model_name' in ini:
                 model_name = ini['model_name']
             else:
-                model_name = "bert-base-multilingual-uncased"
+                model_name = "bert-base-multilingual-cased"
             print(f"model_name: {model_name}")  
     else:
         # choose one from https://huggingface.co/transformers/v4.12.0/pretrained_models.html
         #model_name = "bert-base-german-dbmdz-cased" # do not uncomment, write the name into a ini file instead
         #model_name = "bert-base-multilingual-cased"
         model_name = "gpt2"
-        dimension = 768
 
-    return model_name, dimension
+    return model_name
 
 def get_faiss_and_ini_file(jsonl_file):
     # this function returns the faiss index file and the ini file for a given jsonl file
@@ -156,21 +157,6 @@ def index_file(jsonl_file):
     if os.path.exists(faiss_index_file):
         print(f"FAISS index for {jsonl_file} already exists. Skipping.")
         return
-    
-    # load the ini file if it exists
-    model_name, dimension = load_ini(faiss_ini_file)
-    dimension = int(dimension)
-    print(f"Creating FAISS index for {jsonl_file} with model {model_name} and dimension {dimension}")
-    tokenizer, model = tokenizer_model_from_name(model_name)
-
-    # compute the dimension of the model
-    if model_name.startswith('gpt'): # i.e. gpt2
-        dimensionc = model.config.n_embd
-    else:
-        dimensionc = model.config.hidden_size
-
-    # compare the dimension of the model with the dimension from the ini file
-    assert dimension == dimensionc, f"Error: dimension {dimension} from ini file {faiss_ini_file} does not match dimension {dimensionc} of model {model_name}"
 
     # get the maximum token length for the model
     max_sequence_length = model.config.max_position_embeddings
@@ -257,6 +243,19 @@ def index_file(jsonl_file):
 # Process all .jsonl/.flatjson files
 if __name__ == "__main__":
     knowledge = knowledge_splitter.knowledge_path()
+
+    # load ini file if it exists
+    model_name = load_ini(os.path.join(knowledge, 'knowledge.ini'))
+
+    # load tokenizer and model
+    global tokenizer
+    global model
+    tokenizer, model = tokenizer_model_from_name(model_name)
+    global dimension
+    if model_name.startswith('gpt'): # i.e. gpt2
+        dimension = model.config.n_embd
+    else:
+        dimension = model.config.hidden_size
 
     print(f"Processing directory for indexing: {knowledge}")
     for file in os.listdir(knowledge):

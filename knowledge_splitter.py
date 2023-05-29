@@ -72,7 +72,7 @@ def split_text(text, max_chars):
         split_at = text.rfind(' ', 0, max_chars_here) # find the last space before max_chars_here
         if split_at == -1: split_at = max_chars_here
         chunks.append(text[:split_at])
-        text = text[split_at:]
+        text = text[split_at:].strip()
     chunks.append(text)
 
     # if the number of chunks is now larger than num_chunks, then we need to merge the last two chunks

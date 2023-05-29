@@ -3,3 +3,4 @@ faiss-cpu
 flask
 numpy
 torch
+sentence_transformers

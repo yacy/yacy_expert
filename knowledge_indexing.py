@@ -258,7 +258,8 @@ if __name__ == "__main__":
         dimension = model.config.hidden_size
 
     print(f"Processing directory for indexing: {knowledge}")
-    for file in os.listdir(knowledge):
+    orderedfilelist = knowledge_splitter.list_files_by_size(knowledge)
+    for file in orderedfilelist:
         if  file.endswith('.jsonl') or file.endswith('.jsonl.gz') or \
             file.endswith('.flatjson') or file.endswith('.flatjson.gz'):  # .flatjson is the yacy export format
             print(f"Indexing file: {file}")

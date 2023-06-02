@@ -175,12 +175,35 @@ def new_filename(old_filename):
         return jsonl_file_out + ".split.jsonl"
     return jsonl_file_out
 
+# given a knowledge path, list all files in increasing size
+def list_files_by_size(path):
+    files = []
+    count = 0
+
+    # create a list of tuples (size, path)
+    # to prevent that two files with the same size cause that we miss one file
+    for file in os.listdir(path):
+        fpath = os.path.join(path, file)
+        size = os.path.getsize(fpath)
+        files.append((size * 1000 + count, file))
+        count += 1
+
+    # sort the list of tuples by size
+    files.sort(key=lambda x: x[0])
+
+    # return only the file names
+    return [file[1] for file in files]
+
+
 # Process all .jsonl/.flatjson files
 if __name__ == "__main__":
     knowledge = knowledge_path()
 
     print(f"Processing directory for indexing: {knowledge}")
-    for file in os.listdir(knowledge):
+    orderedfilelist = list_files_by_size(knowledge)
+    for file in orderedfilelist:
+        print(f"reading: {file}")
+
         if  file.endswith('.jsonl') or file.endswith('.jsonl.gz') or \
             file.endswith('.flatjson') or file.endswith('.flatjson.gz'):  # .flatjson is the yacy export format
 

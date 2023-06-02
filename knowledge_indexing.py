@@ -129,15 +129,13 @@ def load_ini(ini_file):
 
     return model_name
 
-def get_faiss_and_ini_file(jsonl_file):
+def get_faiss(jsonl_file):
     # this function returns the faiss index file and the ini file for a given jsonl file
     if jsonl_file.endswith('.gz'):
         faiss_index_file = jsonl_file[:-3] + '.faiss'
-        faiss_ini_file = jsonl_file[:-3] + '.ini'
     else:
         faiss_index_file = jsonl_file + '.faiss'
-        faiss_ini_file = jsonl_file + '.ini'
-    return faiss_index_file, faiss_ini_file
+    return faiss_index_file
 
 def tokenizer_model_from_name(model_name):
     # Load a pre-trained model tokenizer and model
@@ -145,6 +143,9 @@ def tokenizer_model_from_name(model_name):
     if model_name.startswith('gpt2'): # i.e. gpt2
         tokenizer = GPT2Tokenizer.from_pretrained(model_name)
         model = GPT2LMHeadModel.from_pretrained(model_name)
+    elif model_name == 'distiluse-base-multilingual-cased-v1':
+        model = SentenceTransformer('distiluse-base-multilingual-cased-v1')
+        tokenizer = model.tokenizer
     else:
         tokenizer = BertTokenizer.from_pretrained(model_name)
         model = BertModel.from_pretrained(model_name)
@@ -152,14 +153,17 @@ def tokenizer_model_from_name(model_name):
 
 def index_file(jsonl_file):
     # this function reads a YaCy export file and creates a FAISS index file.
-    faiss_index_file, faiss_ini_file = get_faiss_and_ini_file(jsonl_file)
+    faiss_index_file = get_faiss(jsonl_file)
 
     if os.path.exists(faiss_index_file):
         print(f"FAISS index for {jsonl_file} already exists. Skipping.")
         return
 
     # get the maximum token length for the model
-    max_sequence_length = model.config.max_position_embeddings
+    if model_name == 'distiluse-base-multilingual-cased-v1':
+        max_sequence_length = 512
+    else:
+        max_sequence_length = model.config.max_position_embeddings
     print(f"max_sequence_length: {max_sequence_length}")
 
     # read jsonl file and parse it into a list of json objects
@@ -254,6 +258,8 @@ if __name__ == "__main__":
     global dimension
     if model_name.startswith('gpt'): # i.e. gpt2
         dimension = model.config.n_embd
+    elif model_name == 'distiluse-base-multilingual-cased-v1':
+        dimension = 512
     else:
         dimension = model.config.hidden_size
 

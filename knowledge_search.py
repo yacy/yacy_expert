@@ -2,7 +2,7 @@ import os
 import json
 import faiss
 import argparse
-import knowledge_splitter
+import expert_common
 import knowledge_indexing
 from flask import Flask, request, jsonify, Response, make_response
 from flask_cors import CORS
@@ -31,17 +31,17 @@ def load_faiss_indexes(knowledge_path):
             print(f"Loading jsonl file: {jsonl_file}")
             index[index_name] = faiss.read_index(index_file)
             print(f"Size of faiss index file {index_name}: {index[index_name].ntotal}")
-            datas[index_name] = knowledge_splitter.read_text_list(jsonl_file) # these are just text lines
+            datas[index_name] = expert_common.read_text_list(jsonl_file) # these are just text lines
             print(f"Size of index  data file {jsonl_file}: {len(datas[index_name])}")
             ini_names[index_name] = os.path.join(knowledge_path, ini_name) # Store the ini name for each index
     
     return index, datas, ini_names  # Return the ini_names dictionary
 
 # Load all FAISS indexes and data from the data path
-faiss_indexes, jsonl_text, ini_names = load_faiss_indexes(knowledge_splitter.knowledge_path())
+faiss_indexes, jsonl_text, ini_names = load_faiss_indexes(expert_common.knowledge_path())
 
 # load ini file if it exists
-knowledge = knowledge_splitter.knowledge_path()
+knowledge = expert_common.knowledge_path()
 model_name = knowledge_indexing.load_ini(os.path.join(knowledge, 'knowledge.ini'))
 tokenizer, model = knowledge_indexing.tokenizer_model_from_name(model_name)
 
@@ -57,10 +57,12 @@ def search_across_indexes(query, k):
 
         distances, indices = faiss_index.search(query_vector, k)
         for i, idx in enumerate(indices[0]):
+            print(f"Index: {index_name}, Distance: {distances[0][i]}, Index: {idx}")
             if idx != -1:  # Ignore invalid indices
                 text_line = jsonl_text[index_name][idx]
                 result = json.loads(text_line)
-                result['distance'] = float(distances[0][i])
+                distance = distances[0][i]
+                result['distance'] = float(distance)
                 result['index'] = index_name
                 combined_results.append(result)
     combined_results.sort(key=lambda x: x['distance'])

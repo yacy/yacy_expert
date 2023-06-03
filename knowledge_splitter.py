@@ -1,51 +1,6 @@
 import os
 import json
-import time
-import gzip
-
-
-def knowledge_path():
-    # Load all FAISS indexes and index files from the knowledge path
-    path = 'knowledge'
-    # if the directory_path is empty, try to use the local/parallel yacy export path
-    # if the knowledge path is empty or contains one single file '.gitignore', use the local/parallel yacy export path
-    if not path or (len(os.listdir(path)) == 1 and os.listdir(path)[0] == '.gitignore'):
-        path = '../yacy_search_server/DATA/EXPORT/'
-    return path
-
-def read_text_list(jsonl_file):
-    # This reads a YaCy jsonl/flatjson file that was exported for a elasticsearch bulk import
-    # Because a elasticsearch bulk file has a header line with {"index":{}} for each record
-    # we need to skip those lines.
-    # This function returns only the lines that are valid json.
-    # We expect that all json objects have a 'text_t' field that contains the text to be indexed.
-    lines = []
-
-    def read(file):
-        line_count = 0
-        start_time = time.time()
-        for line in file:
-            # alternating every second line the json object must either:
-            # - start with {"index":{}} or
-            # - contain a 'text_t' field
-            if line.startswith('{"index":'): continue # if line starts with {"index":{}} skip it
-            if 'text_t' not in line: continue # if line does not contain 'text_t', skip
-
-            lines.append(line)
-            line_count += 1
-
-            # Logging progress at regular intervals, e.g., every 100,000 lines
-            if line_count % 100000 == 0:
-                elapsed_time = time.time() - start_time
-                print(f"Read {line_count} lines in {elapsed_time:.2f} seconds")
-
-    if os.path.exists(jsonl_file):
-        if jsonl_file.endswith('.gz'):
-            with gzip.open(jsonl_file, 'rt', encoding='utf-8') as file: read(file)
-        else:
-            with open(jsonl_file, 'r', encoding='utf-8') as file: read(file)
-
-    return lines
+import expert_common
 
 # split the text into chunks of max_chars; return a list of chunks
 # the maximum number of characters per chunk in source text
@@ -85,7 +40,7 @@ def split_text(text, max_chars):
 def split_file(jsonl_file, jsonl_file_out, chunklen=800):
 
     # read jsonl file and parse it into a list of json objects
-    texts_in = read_text_list(jsonl_file)
+    texts_in = expert_common.read_text_list(jsonl_file)
 
     # in case that the text_list is empty, we just skip this file
     if len(texts_in) == 0:
@@ -175,32 +130,12 @@ def new_filename(old_filename):
         return jsonl_file_out + ".split.jsonl"
     return jsonl_file_out
 
-# given a knowledge path, list all files in increasing size
-def list_files_by_size(path):
-    files = []
-    count = 0
-
-    # create a list of tuples (size, path)
-    # to prevent that two files with the same size cause that we miss one file
-    for file in os.listdir(path):
-        fpath = os.path.join(path, file)
-        size = os.path.getsize(fpath)
-        files.append((size * 1000 + count, file))
-        count += 1
-
-    # sort the list of tuples by size
-    files.sort(key=lambda x: x[0])
-
-    # return only the file names
-    return [file[1] for file in files]
-
-
 # Process all .jsonl/.flatjson files
 if __name__ == "__main__":
-    knowledge = knowledge_path()
+    knowledge = expert_common.knowledge_path()
 
     print(f"Processing directory for indexing: {knowledge}")
-    orderedfilelist = list_files_by_size(knowledge)
+    orderedfilelist = expert_common.list_files_by_size(knowledge)
     for file in orderedfilelist:
         print(f"reading: {file}")
 

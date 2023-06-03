@@ -10,7 +10,8 @@ from sentence_transformers import SentenceTransformer
 from concurrent.futures import ThreadPoolExecutor
 import gzip
 import configparser
-import knowledge_splitter
+import expert_common
+import ssl
 
 # predefine dictionary for each language model one number which holds the number of characters per token
 chars_per_token = {
@@ -167,7 +168,7 @@ def index_file(jsonl_file):
     print(f"max_sequence_length: {max_sequence_length}")
 
     # read jsonl file and parse it into a list of json objects
-    text_list = knowledge_splitter.read_text_list(jsonl_file)
+    text_list = expert_common.read_text_list(jsonl_file)
 
     # in case that the text_list is empty, we just skip this file
     if len(text_list) == 0:
@@ -246,7 +247,11 @@ def index_file(jsonl_file):
 
 # Process all .jsonl/.flatjson files
 if __name__ == "__main__":
-    knowledge = knowledge_splitter.knowledge_path()
+    # this is needed to avoid an SSL error when downloading the model; the problem usually only occurs behind ssl-terminating proxies
+    ssl._create_default_https_context = ssl._create_unverified_context
+
+    # get the knowledge path
+    knowledge = expert_common.knowledge_path()
 
     # load ini file if it exists
     model_name = load_ini(os.path.join(knowledge, 'knowledge.ini'))
@@ -264,7 +269,7 @@ if __name__ == "__main__":
         dimension = model.config.hidden_size
 
     print(f"Processing directory for indexing: {knowledge}")
-    orderedfilelist = knowledge_splitter.list_files_by_size(knowledge)
+    orderedfilelist = expert_common.list_files_by_size(knowledge)
     for file in orderedfilelist:
         if  file.endswith('.jsonl') or file.endswith('.jsonl.gz') or \
             file.endswith('.flatjson') or file.endswith('.flatjson.gz'):  # .flatjson is the yacy export format

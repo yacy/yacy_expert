@@ -1,10 +1,10 @@
 import os
-import knowledge_splitter
+import expert_common
 
 # run this if you want to reset the knowledge directory
 # to the state before the knowledge_splitter and knowledge_indexer were run
 if __name__ == "__main__":
-    knowledge = knowledge_splitter.knowledge_path()
+    knowledge = expert_common.knowledge_path()
 
     print(f"Resetting all processing steps in: {knowledge}")
 
@@ -31,3 +31,7 @@ if __name__ == "__main__":
             os.rename(os.path.join(knowledge, file), os.path.join(knowledge, file[:-9]))
             count += 1
     print(f"Renamed {count} .original files")
+    print("To run all processing steps to make a search index, do:")
+    print("- run knowledge_dedup.py to remove double index entries")
+    print("- run knowledge_splitter.py to separate large chunks of documents into smaller ones")
+    print("- run knowledge_indexing.py to generate .faiss index files")

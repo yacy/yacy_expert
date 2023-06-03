@@ -60,6 +60,7 @@ def search_across_indexes(query, k):
             print(f"Index: {index_name}, Distance: {distances[0][i]}, Index: {idx}")
             if idx != -1:  # Ignore invalid indices
                 text_line = jsonl_text[index_name][idx]
+                if not "text_t" in text_line: continue # Skip if text_t is not in the line
                 result = json.loads(text_line)
                 distance = distances[0][i]
                 result['distance'] = float(distance)

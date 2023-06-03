@@ -126,7 +126,9 @@ def load_ini(ini_file):
         # choose one from https://huggingface.co/transformers/v4.12.0/pretrained_models.html
         #model_name = "bert-base-german-dbmdz-cased" # do not uncomment, write the name into a ini file instead
         #model_name = "bert-base-multilingual-cased"
-        model_name = "gpt2"
+        #model_name = "distiluse-base-multilingual-cased-v1"
+        #model_name = "gpt2"
+        model_name = "bert-base-multilingual-cased"
 
     return model_name
 
@@ -183,6 +185,7 @@ def index_file(jsonl_file):
         futures = []
         for i in range(0, len(text_list)):
             text_line = text_list[i]
+            if not "text_t" in text_line: continue # Skip if text_t is not in the line
             # parse the json line
             try:
                 record = json.loads(text_line)

@@ -31,6 +31,30 @@ if __name__ == "__main__":
             os.rename(os.path.join(knowledge, file), os.path.join(knowledge, file[:-9]))
             count += 1
     print(f"Renamed {count} .original files")
+
+    # for all files ending with .md or .md.gz remove the corresponding .jsonl or jsonl.gz file
+    count = 0
+    for file in os.listdir(knowledge):
+        if file.endswith('.md'):
+            f   = os.path.join(knowledge, file[:-3] + '.jsonl')
+            fgz = os.path.join(knowledge, file[:-3] + '.jsonl.gz')
+            if os.path.exists(f):
+                os.remove(f)
+                count += 1
+            if os.path.exists(fgz):
+                os.remove(fgz)
+                count += 1
+        if file.endswith('.md.gz'):
+            f   = os.path.join(knowledge, file[:-6] + '.jsonl')
+            fgz = os.path.join(knowledge, file[:-6] + '.jsonl.gz')
+            if os.path.exists(f):
+                os.remove(f)
+                count += 1
+            if os.path.exists(fgz):
+                os.remove(fgz)
+                count += 1
+    print(f"Deleted {count} .jsonl files for markdown sources")
+
     print("To run all processing steps to make a search index, do:")
     print("- run knowledge_dedup.py to remove double index entries")
     print("- run knowledge_splitter.py to separate large chunks of documents into smaller ones")

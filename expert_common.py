@@ -1,6 +1,7 @@
 import os
 import time
 import gzip
+import json
 
 # Common functions for the expert system
 
@@ -45,12 +46,6 @@ def read_text_list(jsonl_file):
         line_count = 0
         start_time = time.time()
         for line in file:
-            # alternating every second line the json object must either:
-            # - start with {"index":{}} or
-            # - contain a 'text_t' field
-            if line.startswith('{"index":'): continue # if line starts with {"index":{}} skip it
-            if 'text_t' not in line: continue # if line does not contain 'text_t', skip
-
             lines.append(line)
             line_count += 1
 
@@ -66,3 +61,9 @@ def read_text_list(jsonl_file):
             with open(jsonl_file, 'r', encoding='utf-8') as file: read(file)
 
     return lines
+
+def write_jsonlist(json_objects_out, jsonl_file_out):
+    print(f"Writing {len(json_objects_out)} lines to {jsonl_file_out}")
+    with open(jsonl_file_out, 'w', encoding='utf-8') as file:
+        for j in json_objects_out:
+            file.write(json.dumps(j, ensure_ascii=False) + '\n')

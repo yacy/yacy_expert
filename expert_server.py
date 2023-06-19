@@ -1,6 +1,7 @@
 import os
 import json
 import requests
+import argparse
 from flask import Flask, request, jsonify, make_response, Response, stream_with_context
 from flask_cors import CORS
 from urllib.parse import urlparse
@@ -119,5 +120,18 @@ def proxy():
         # Unsupported HTTP method
         return jsonify({'message': 'Method not supported'}), 405
 
-if __name__ == '__main__':
-    app.run(port=5001, host="0.0.0.0", debug=True)
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Generate text using a specific model.")
+    parser.add_argument("--model", default="gptneo_oetker_trained", type=str, help="Model name of remote LLM")
+    parser.add_argument("--port", default=5001, type=int, help="Port for the reverse proxy server")
+    parser.add_argument("--host", default="0.0.0.0", type=str, help="Local host address")
+    parser.add_argument("--yacy_search_host", default=YACYSEARCH_HOST, type=str, help="http address of search host")
+    parser.add_argument("--openai_api_host", default=OPENAI_API_HOST, type=str, help="http address of ApenAI API")
+    parser.add_argument("--openai_api_key", default=OPENAI_API_KEY, type=str, help="OpenAI API key")
+    parser.add_argument("--rag_context_prefix", default=RAG_CONTEXT_PREFIX, type=str, help="Prefix string for RAG context")
+    args = parser.parse_args()
+    YACYSEARCH_HOST = args.yacy_search_host
+    OPENAI_API_HOST = args.openai_api_host
+    OPENAI_API_KEY = args.openai_api_key
+    RAG_CONTEXT_PREFIX = args.rag_context_prefix
+    app.run(host=args.host, port=args.port, debug=True)

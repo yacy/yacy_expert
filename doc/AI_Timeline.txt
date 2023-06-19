@@ -1,0 +1,404 @@
+19581230: General Problem Solving
+http://bitsavers.informatik.uni-stuttgart.de/pdf/rand/ipl/P-1584_Report_On_A_General_Problem-Solving_Program_Feb59.pdf
+"This paper reports on a computer program, called GPS-I for General Problem Solving Program I. Construction and investigation of this program is part of a research effort by the authors to understand the information process that underlie human intellectual, adaptive, and creative abilities. The approach is synthetic - to construct computer programs that can solve problems requiring intelligence and adaption, and to discover which varieties of these programs can be matched to data on human problem solving."
+
+19961201: LONG SHORT-TERM MEMORY Technical Report FKI-207-95, Version 3.0
+Research Paper: https://www.bioinf.jku.at/publications/older/3504.pdf
+
+20100926: Recurrent neural network based language model
+Precursor work for word2vec, the basic idea to create word embeddings for LLMs
+"A new recurrent neural network based language model (RNN LM) with applications to speech recognition is presented."
+https://www.isca-speech.org/archive/interspeech_2010/mikolov10_interspeech.html
+
+20130116: Efficient Estimation of Word Representations in Vector Space
+"We propose two novel model architectures for computing continuous vector representations of words from very large data sets. The quality of these representations is measured in a word similarity task, and the results are compared to the previously best performing techniques based on different types of neural networks. We observe large improvements in accuracy at much lower computational cost, i.e. it takes less than a day to learn high quality word vectors from a 1.6 billion words data set. Furthermore, we show that these vectors provide state-of-the-art performance on our test set for measuring syntactic and semantic word similarities."
+Research Paper: https://arxiv.org/pdf/1301.3781.pdf
+
+20130804: Generating Sequences With Recurrent Neural Networks
+"This paper shows how Long Short-term Memory recurrent neural networks can be used to generate complex sequences with long-range structure, simply by predicting one data point at a time."
+Research Paper: https://arxiv.org/pdf/1308.0850.pdf
+Alex Graves shows how a RNN based on LSTMs can generate texts using a training on wikipedia data.
+
+20131016: Distributed Representations of Words and Phrases and their Compositionality
+"In this paper we present several extensions that improve both the quality of the vectors and the training speed. By subsampling of the frequent words we obtain significant speedup and also learn more regular word representations."
+Research Paper: https://arxiv.org/pdf/1310.4546.pdf
+
+20140603: Learning Phrase Representations using RNN Encoder-Decoder for Statistical Machine Translation
+"In this paper, we propose a novel neural network model called RNN Encoder-Decoder that consists of two recurrent neural networks (RNN). One RNN encodes a sequence of symbols into a fixed-length vector representation, and the other decodes the representation into another sequence of symbols. The encoder and decoder of the proposed model are jointly trained to maximize the conditional probability of a target sequence given a source sequence."
+Research Paper: https://arxiv.org/pdf/1406.1078.pdf
+
+20140901: Neural Machine Translation by Jointly Learning to Align and Translate
+Research Paper: https://arxiv.org/pdf/1409.0473.pdf
+First introduction of an attention mechanism: this implements a mechanism of attention in the decoder. The decoder decides parts of the source sentence to pay attention to. By letting the decoder have an attention mechanism, we relieve the encoder from the burden of having to encode all information in the source sentence into a fixedlength vector. With this new approach the information can be spread throughout the sequence of annotations, which can be selectively retrieved by the decoder accordingly.
+
+20150901: GloVe: Global Vectors for Word Representation (Stanford University)
+"GloVe is an unsupervised learning algorithm for obtaining vector representations for words. Training is performed on aggregated global word-word co-occurrence statistics from a corpus, and the resulting representations showcase interesting linear substructures of the word vector space."
+https://nlp.stanford.edu/projects/glove/
+Research Paper: https://nlp.stanford.edu/pubs/glove.pdf
+Github: https://github.com/stanfordnlp/GloVe
+
+20160616: SQuAD: 100,000+ Questions for Machine Comprehension of Text (Stanford University)
+https://rajpurkar.github.io/SQuAD-explorer/
+"We present the Stanford Question Answering Dataset (SQuAD1.0), a new reading comprehension dataset consisting of 100,000+ questions posed by crowdworkers on a set of Wikipedia articles, where the answer to each question is a segment of text from the corresponding reading passage. SQuAD2.0 combines the 100,000 questions in SQuAD1.1 with over 50,000 unanswerable questions written adversarially by crowdworkers to look similar to answerable ones."
+Research Paper SQuAD1.0: https://arxiv.org/pdf/1606.05250.pdf
+Research Paper SQuAD2.0: https://arxiv.org/pdf/1806.03822.pdf
+
+20170329 Faiss: A library for efficient similarity search
+https://engineering.fb.com/2017/03/29/data-infrastructure/faiss-a-library-for-efficient-similarity-search/
+"we released Facebook AI Similarity Search (Faiss), a library that allows us to quickly search for multimedia documents that are similar to each other — a challenge where traditional query search engines fall short. We’ve built nearest-neighbor search implementations for billion-scale data sets that are some 8.5x faster than the previous reported state-of-the-art, along with the fastest k-selection algorithm on the GPU known in the literature. This lets us break some records, including the first k-nearest-neighbor graph constructed on 1 billion high-dimensional vectors."
+Github: https://github.com/facebookresearch/faiss
+
+20170509: TriviaQA: A Large Scale Distantly Supervised Challenge Dataset for Reading Comprehension (University of Washington, Allen Institute for Artificial Intelligence)
+"We present TriviaQA, a challenging reading comprehension dataset containing over 650K question-answer-evidence triples. TriviaQA includes 95K question-answer pairs authored by trivia enthusiasts and independently gathered evidence documents, six per question on average, that provide high quality distant supervision for answering the questions."
+Research Paper: https://arxiv.org/pdf/1705.03551.pdf
+Github: https://github.com/mandarjoshi90/triviaqa
+
+20170612: Attention Is All You Need (Google)
+"We propose a new simple network architecture, the Transformer, based solely on attention mechanisms, dispensing with recurrence and convolutions entirely."
+This is the introduction to the Transformer concept which enhances LSTM models and makes them superfluous.
+Research Paper: https://arxiv.org/pdf/1706.03762.pdf
+Github: https://github.com/tensorflow/tensor2tensor
+
+20170612: Deep reinforcement learning from human preferences (Google)
+"For sophisticated reinforcement learning (RL) systems to interact usefully with real-world environments, we need to communicate complex goals to these systems. In this work, we explore goals defined in terms of (non-expert) human preferences between pairs of trajectory segments. We show that this approach can effectively solve complex RL tasks without access to the reward function, including Atari games and simulated robot locomotion, while providing feedback on less than 1% of our agent’s interactions with the environment."
+Research Paper: https://arxiv.org/pdf/1706.03741.pdf
+
+20171029: Simple and Effective Multi-Paragraph Reading Comprehension (University of Washington, Allen Institute for Artificial Intelligence)
+"We consider the problem of adapting neural paragraph-level question answering models to the case where entire documents are given as input."
+Research Paper: https://arxiv.org/pdf/1710.10723.pdf
+Github: https://github.com/allenai/document-qa
+This uses the TriviaQA, SQuAD and GloVe Dataset
+
+20180611: Improving Language Understanding by Generative Pre-Training ("GPT-1", OpenAI)
+"We’ve obtained state-of-the-art results on a suite of diverse language tasks with a scalable, task-agnostic system, which we’re also releasing. Our approach is a combination of two existing ideas: transformers and unsupervised pre-training."
+"We trained a 12-layer decoder-only transformer with masked self-attention heads (768 dimensional states and 12 attention heads). For the position-wise feed-forward networks, we used 3072 dimensional inner states."
+https://openai.com/research/language-unsupervised
+Github: https://github.com/openai/finetune-transformer-lm
+Dataset: https://www.cs.rochester.edu/nlp/rocstories/ https://www.tensorflow.org/datasets/catalog/story_cloze
+Research Paper: https://cdn.openai.com/research-covers/language-unsupervised/language_understanding_paper.pdf
+
+20180811: BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding (Google)
+BERT - Bidirectional Encoder Representations from Transformers.
+"The pre-trained model can then be fine-tuned on small-data NLP tasks like question answering and sentiment analysis, resulting in substantial accuracy improvements compared to training on these datasets from scratch."
+There are two model sizes:
+    BERT(BASE) 110M parameters, 12 layers, d=768 hidden, 12 heads (same size as GPT-1)
+    BERT(LARGE) 340M parameters, 24 layers, d=1024 hidden, 16 heads
+https://ai.googleblog.com/2018/11/open-sourcing-bert-state-of-art-pre.html
+Research Paper: https://arxiv.org/pdf/1810.04805.pdf
+Github: https://github.com/google-research/bert
+
+20190211: Language Models are Unsupervised Multitask Learners ("GPT-2", OpenAI)
+Trained on Web Pages using Common Crawl, dataset called WebText; containing 45 million documents scraped from HTML; Wikipedia removed. 4 model sizes are trained:
+    117M parameters, 12 layers, d=768 hidden (equivalent to GPT-1)
+    345M parameters, 24 layers, d=1024 hidden (equivalent to largest model from BERT)
+    762M parameters, 36 layers, d=1280 hidden
+    1542M parameters, 48 layers, d=1600 hidden
+BERT has bidirectional self-attention while GPT uses constrained self-attention where every token can only attend to context to its left.
+https://openai.com/research/better-language-models
+https://openai.com/research/gpt-2-6-month-follow-up
+https://openai.com/research/gpt-2-1-5b-release
+Research Paper 1: https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf
+Research Paper 2+3: https://arxiv.org/pdf/1908.09203.pdf
+Research Paper: https://d4mucfpksywv.cloudfront.net/better-language-models/language-models.pdf
+Github: https://github.com/openai/gpt-2
+Dataset: https://github.com/openai/gpt-2-output-dataset
+
+20190919: Fine-Tuning GPT-2 from Human Preferences (OpenAI)
+"We’ve fine-tuned the 774M parameter GPT-2 language model using human feedback for various tasks, successfully matching the preferences of the external human labelers, though those preferences did not always match our own. Specifically, for summarization tasks the labelers preferred sentences copied wholesale from the input (we’d only asked them to ensure accuracy), so our models learned to copy. Summarization required 60k human labels; simpler tasks which continue text in various styles required only 5k. Our motivation is to move safety techniques closer to the general task of “machines talking to humans,” which we believe is key to extracting information about human values."
+This is essentially a first attempt to an instruct-type refinement of a LLM. This work was done with https://scale.com/ which also paritcipated in the creation of ChatGPT.
+https://openai.com/research/fine-tuning-gpt-2
+Research Paper: https://arxiv.org/pdf/1909.08593.pdf
+Github: https://github.com/openai/lm-human-preferences
+BookCorpus Data: https://github.com/soskek/bookcorpus
+TL;DR/Reddit Data: https://aclanthology.org/W17-4508/
+CNN/Daily Mail Data: https://github.com/abisee/cnn-dailymail
+
+20200522: Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks
+We explore a general-purpose fine-tuning recipe for retrieval-augmented generation (RAG) -- models which combine pre-trained parametric and non-parametric memory for language generation. We introduce RAG models where the parametric memory is a pre-trained seq2seq model and the non-parametric memory is a dense vector index of Wikipedia, accessed with a pre-trained neural retriever.
+Research Paper: https://arxiv.org/pdf/2005.11401
+
+20200528: Language Models are Few-Shot Learners ("GPT-3", OpenAI)
+"We train GPT-3, an autoregressive language model with 175 billion parameters, 10x more than any previous non-sparse language model, and test its performance in the few-shot setting."
+OpenAI did not announce GPT-3 in a blog post but referred in a "OpenAI API" June blog post to the existing GPT-3 model. OpenAI addressed the question "Why did OpenAI choose to release an API instead of open-sourcing the models?" with the answer: commercializing, model too large, response to mis-use of the model through the API.
+The training set consists of Common Crawl (60%), WebText2 (22%), Books1/2 (16%) and Wikipedia (3%).
+https://openai.com/blog/openai-api
+Research Paper: https://arxiv.org/pdf/2005.14165.pdf
+
+20200904: Learning to summarize with human feedback (OpenAI)
+"We’ve applied reinforcement learning from human feedback to train language models that are better at summarization."
+https://openai.com/research/learning-to-summarize-with-human-feedback
+Research Paper: https://arxiv.org/pdf/2009.01325.pdf
+Github: https://github.com/openai/summarize-from-feedback
+
+20201231: The Pile: An 800GB Dataset of Diverse Text for Language Modeling (AleutherAI)
+"We present the Pile: an 825 GiB English text corpus targeted at training large-scale language models. The Pile is constructed from 22 diverse high-quality subsets—both existing and newly constructed—many of which derive from academic or professional sources."
+https://pile.eleuther.ai/
+The Pile consist of PubMed, ArXiv, CommonCrawl, Bibliothic, FreeLaw, OpenWebText, StackExchange, Wikipedia, Github and more sources.
+Research Paper: https://arxiv.org/pdf/2101.00027.pdf
+Github: https://github.com/EleutherAI/the-pile
+Dataset Download: https://the-eye.eu/public/AI/pile/
+
+20210208: A* Search Without Expansions: Learning Heuristic Functions with Deep Q-Networks
+"We introduce Q* search, a search algorithm that uses deep Q-networks to guide search in order to take advantage of the fact that the sum of the transition costs and heuristic values of the children of a node can be computed with a single forward pass through a deep Q-network without explicitly generating those children."
+Research Paper: https://arxiv.org/pdf/2102.04518.pdf
+
+20210321: GPT-Neo (AleutherAI)
+"A series of large language models trained on the Pile. It was our first attempt to produce GPT-3-like language models and comes in 125M, 1.3B, and 2.7B parameter variants. Training and inference is officially supported on TPU and should work on GPU as well."
+Github: https://github.com/EleutherAI/gpt-neo
+
+202105xx: GPT-J-6B: A 6 Billion Parameter Autoregressive Language Model (AleutherAI)
+"GPT-J 6B is a transformer model trained using Ben Wang's Mesh Transformer JAX."
+The model consists of 28 layers with a model dimension of 4096, and a feedforward dimension of 16384. The model dimension is split into 16 heads, each with a dimension of 256. GPT-J was trained on the Pile, a dataset known to contain profanity, lewd, and otherwise abrasive language. GPT-J-6B was trained on an English-language only dataset, and is thus not suitable for translation or generating text in other languages.
+Huggingface: https://huggingface.co/EleutherAI/gpt-j-6b
+
+20210617: LoRA: Low-Rank Adaptation of Large Language Models (Microsoft)
+We propose Low-Rank Adaptation, or LoRA, which freezes the pre-trained model weights and injects trainable rank decomposition matrices into each layer of the Transformer architecture, greatly reducing the number of trainable parameters for downstream tasks.
+Research Paper: https://arxiv.org/pdf/2106.09685.pdf
+
+20210827: "ALiBi" - Train Short, Test Long: Attention with Linear Biases Enables Input Length Extrapolation (Facebook AI Research, Allen Institute for AI)
+We introduce a simple and efficient position method, Attention with Linear Biases (ALiBi). ALiBi does not add positional embeddings to word embeddings; instead, it biases query-key attention scores with a penalty that is proportional to their distance. We show that this method trains a 1.3 billion parameter model on input sequences of length 1024 that extrapolates to input sequences of length 2048, achieving the same perplexity as a sinusoidal position embedding model trained on inputs of length 2048 but training 11% faster and using 11% less memory.
+Research Paper: https://arxiv.org/pdf/2108.12409.pdf
+
+20220114: Q-Learning: Model Free Reinforcement Learning and Temporal Difference Learning
+"Here we describe Q-learning, which is one of the most popular methods in reinforcement learning. Q-learning is a type of temporal difference learning. We discuss other TD algorithms, such as SARSA, and connections to biological learning through dopamine. Q-learning is also one of the most common frameworks for deep reinforcement learning."
+"Q*"
+https://doi.org/10.52843/cassyni.ss11hp
+https://cassyni.com/events/KrB69hwp4kNPzSNvBoNmDo
+https://www.youtube.com/watch?v=0iqz4tcKN58
+
+20220127: Aligning language models to follow instructions ("InstructGPT", OpenAI)
+https://openai.com/research/instruction-following
+"InstructGPT is a GPT-style language model. Researchers at OpenAI developed the model by fine-tuning GPT-3 to follow instructions using human feedback. There are three model sizes: 1.3B, 6B, and 175B parameters."
+Research Paper: https://arxiv.org/pdf/2203.02155.pdf
+Model Card: https://github.com/openai/following-instructions-human-feedback/blob/main/model-card.md
+Github: https://github.com/openai/following-instructions-human-feedback
+
+20220315: GPT-3.5 (OpenAI)
+On March 15, 2022, OpenAI made available new versions of GPT-3 and Codex in its API with edit and insert capabilities under the names "text-davinci-002" and "code-davinci-002". These models were described as more capable than previous versions and were trained on data up to June 2021. On November 30, 2022, OpenAI began referring to these models as belonging to the "GPT-3.5" series, and released ChatGPT, which was fine-tuned from a model in the GPT-3.5 series.
+
+20220328: STaR: Bootstrapping Reasoning With Reasoning
+"We propose a technique to iteratively leverage a small number of rationale examples and a large dataset without rationales, to bootstrap the ability to perform successively more complex reasoning. This technique, the "Self-Taught Reasoner" (STaR), relies on a simple loop: generate rationales to answer many questions, prompted with a few rationale examples; if the generated answers are wrong, try again to generate a rationale given the correct answer; fine-tune on all the rationales that ultimately yielded correct answers; repeat."
+Research Paper: https://arxiv.org/pdf/2203.14465.pdf
+
+20220414: GPT-NeoX-20B: An Open-Source Autoregressive Language Model (AleutherAI)
+"We introduce GPT-NeoX-20B, a 20 billion parameter autoregressive language model trained on the Pile, whose weights will be made freely and openly available to the public through a permissive license."
+Research Paper: https://arxiv.org/pdf/2204.06745.pdf
+Github: https://github.com/EleutherAI/gpt-neox
+
+20220412: Training a Helpful and Harmless Assistant with Reinforcement Learning from Human Feedback (Anthropic)
+We apply preference modeling and reinforcement learning from human feedback (RLHF) to finetune language models to act as helpful and harmless assistants.
+Research Paper: https://arxiv.org/pdf/2204.05862.pdf
+Huggingface Model: https://huggingface.co/datasets/Anthropic/hh-rlhf
+
+20220502: OPT: Open Pre-trained Transformer Language Models (Meta)
+"We present Open Pre-trained Transformers (OPT), a suite of decoder-only pre-trained transformers ranging from 125M to 175B parameters. We show that OPT-175B is comparable to GPT-3,1 while requiring only 1/7th the carbon footprint to develop."
+The pre-training corpus contains a concatenation of datasets used in RoBERTa (Liu et al., 2019b), the Pile (Gao et al., 2021a), and PushShift.io Reddit (Baumgartner et al., 2020; Roller et al., 2021).
+Research Paper: https://arxiv.org/pdf/2205.01068.pdf
+
+20220527: FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness
+We propose FlashAttention, an IO-aware exact attention algorithm that uses tiling to reduce the number of memory reads/writes between GPU high bandwidth memory (HBM) and GPU on-chip SRAM.
+Research Paper: https://arxiv.org/pdf/2205.14135.pdf
+
+20220921: Introducing Whisper
+"We’ve trained and are open-sourcing a neural net called Whisper that approaches human level robustness and accuracy on English speech recognition."
+https://openai.com/research/whisper
+Research Paper: https://cdn.openai.com/papers/whisper.pdf
+Model Card: https://github.com/openai/whisper/blob/main/model-card.md
+Github: https://github.com/openai/whisper
+
+20220925: whisper.cpp a High-performance inference of OpenAI's Whisper automatic speech recognition (ASR)  model
+https://github.com/ggerganov/whisper.cpp
+cpp-Implementation of https://github.com/openai/whisper
+
+20220929: Make-A-Video: Text-to-Video Generation without Text-Video Data
+We propose Make-A-Video – an approach for directly translating the tremendous recent progress in Text-to-Image (T2I) generation to Text-to-Video (T2V). Our intuition is simple: learn what the world looks like and how it is described from paired text-image data, and learn how the world moves from unsupervised video footage. (Meta AI)
+https://makeavideo.studio/
+Reseach Paper: https://arxiv.org/pdf/2209.14792.pdf
+
+20221030: Introducing ChatGPT
+"We’ve trained a model called ChatGPT which interacts in a conversational way. The dialogue format makes it possible for ChatGPT to answer followup questions, admit its mistakes, challenge incorrect premises, and reject inappropriate requests."
+"ChatGPT is a sibling model to InstructGPT, which is trained to follow an instruction in a prompt and provide a detailed response."
+https://openai.com/blog/chatgpt
+On November 30, 2022, OpenAI began referring to the models "text-davinci-002" and "code-davinci-002" as belonging to the "GPT-3.5" series, and released ChatGPT, which was fine-tuned from a model in the GPT-3.5 series.
+
+20221109: BLOOM: A 176B-Parameter Open-Access Multilingual Language Model
+Research Paper: https://arxiv.org/pdf/2211.05100.pdf
+Blog: https://bigscience.huggingface.co/blog/bloom
+Model: https://huggingface.co/bigscience/bloom
+
+20221220: Self-Instruct: Aligning Language Model with Self Generated Instructions (Stanford)
+"We introduce SELF-INSTRUCT, a framework for improving the instruction-following capabilities of pretrained language models by bootstrapping off its own generations."
+Research Paper: https://arxiv.org/pdf/2212.10560.pdf
+Github: https://github.com/yizhongw/self-instruct
+Dataset: https://raw.githubusercontent.com/yizhongw/self-instruct/main/data/finetuning/self_instruct_221203/gpt3_finetuning_data.jsonl
+The dataset is given in GPT-3 finetuning-format, as described in https://platform.openai.com/docs/guides/fine-tuning 
+
+20230214: What Is ChatGPT Doing … and Why Does It Work?
+Blog post from Stephen Wolfram trying to explain whats going on in ChatGPT
+https://writings.stephenwolfram.com/2023/02/what-is-chatgpt-doing-and-why-does-it-work/
+
+20230224: Facebook Introduced LLaMA (Large Language Model Meta AI)
+https://ai.facebook.com/blog/large-language-model-llama-meta-ai/
+"We trained LLaMA 65B and LLaMA 33B on 1.4 trillion tokens. Our smallest model, LLaMA 7B, is trained on one trillion tokens."
+Research Paper: https://arxiv.org/pdf/2302.13971.pdf
+Model Card: https://github.com/facebookresearch/llama/blob/main/MODEL_CARD.md
+Github: https://github.com/facebookresearch/llama
+
+20230224: Planning for AGI and beyond
+"Our mission is to ensure that artificial general intelligence—AI systems that are generally smarter than humans—benefits all of humanity."
+https://openai.com/blog/planning-for-agi-and-beyond
+
+20230226: ChatLLaMA
+ChatLLaMA 🦙 is a library that allows you to create hyper-personalized ChatGPT-like assistants using your own data and the least amount of compute possible.
+https://stuff.serp.ai/l/lora-weights
+Github: https://github.com/nebuly-ai/nebullvm/tree/main/apps/accelerate/chatllama
+
+20230227: LLaMA: Open and Efficient Foundation Language Models (Facebook)
+We introduce LLaMA, a collection of foundation language models ranging from 7B to 65B parameters. We train our models on trillions of tokens, and show that it is possible to train state-of-the-art models using publicly available datasets exclusively, without resorting to proprietary and inaccessible datasets. In particular, LLaMA-13B outperforms GPT-3 (175B) on most benchmarks, and LLaMA-65B is competitive with the best models, Chinchilla-70B and PaLM-540B. We release all our models to the research community.
+Research Paper: https://arxiv.org/pdf/2302.13971.pdf
+
+20230301: Introducing ChatGPT and Whisper APIs
+OpenAI announces that developers can now integrate ChatGPT and Whisper models into their apps and products through our API.
+https://openai.com/blog/introducing-chatgpt-and-whisper-apis
+
+20230310: Llama.cpp: Inference of LLaMA model in pure C/C++
+Github: https://github.com/ggerganov/llama.cpp
+make
+python3 convert-pth-to-ggml.py models/7B/ 1
+python3 quantize.py 7B
+./main -m ./models/7B/ggml-model-q4_0.bin -p "the best places to visit in south korea are:" -t 8 -n 512
+python3 convert-pth-to-ggml.py models/65B/ 1
+python3 quantize.py 65B
+./main -m ./models/65B/ggml-model-q4_0.bin -p "the best places to visit in south korea are:" -t 8 -n 512
+
+20230312: Auto-GPT: An Autonomous GPT-4 Experiment
+"Auto-GPT is an experimental open-source application showcasing the capabilities of the GPT-4 language model. This program, driven by GPT-4, chains together LLM "thoughts", to autonomously achieve whatever goal you set. As one of the first examples of GPT-4 running fully autonomously, Auto-GPT pushes the boundaries of what is possible with AI."
+Github: https://github.com/Significant-Gravitas/Auto-GPT
+
+20230312: Dalai: Run LLaMA and Alpaca on your computer (Web Framework)
+Github: https://github.com/bleriot14/dalai
+
+20230312: Vicuna: An Open-Source Chatbot Impressing GPT-4 with 90%* ChatGPT Quality (UC Berkeley, CMU, Stanford, MBZUAI, and UC San Diego)
+"We introduce Vicuna-13B, an open-source chatbot trained by fine-tuning a LLaMA base model using approximately 70K user-shared conversations gathered from ShareGPT.com with public APIs."
+https://vicuna.lmsys.org/
+blog: https://lmsys.org/blog/2023-03-30-vicuna/
+Demo: https://chat.lmsys.org/
+Github: https://github.com/lm-sys/FastChat
+
+20230313: Stanford Alpaca: An Instruction-following LLaMA Model
+We introduce Alpaca 7B, a model fine-tuned from the LLaMA 7B model on 52K instruction-following demonstrations. On our preliminary evaluation of single-turn instruction following, Alpaca behaves qualitatively similarly to OpenAI’s text-davinci-003, while being surprisingly small and easy/cheap to reproduce (<600$)
+https://crfm.stanford.edu/2023/03/13/alpaca.html
+Github: https://github.com/tatsu-lab/stanford_alpaca
+
+20230316: Alpaca.cpp: Run a fast ChatGPT-like model locally on your device. 
+fork of llama.cpp
+Github: https://github.com/antimatter15/alpaca.cpp
+
+20230320: Stanford Researchers Take Down Alpaca AI Due to 'Hallucinations' and Rising Costs
+
+20230320: Alpaca-Turbo: a user-friendly web UI for the alpaca.cpp language model
+"With unique features that make it stand out from other implementations. The goal is to provide a seamless chat experience that is easy to configure and use, without sacrificing speed or functionality."
+Github: https://github.com/ViperX7/Alpaca-Turbo/
+
+20230322: Sparks of Artificial General Intelligence: Early experiments with GPT-4
+"We contend that (this early version of) GPT4 is part of a new cohort of LLMs (along with ChatGPT and Google’s PaLM for example) that exhibit more general intelligence than previous AI models."
+Research Paper: https://arxiv.org/pdf/2303.12712.pdf
+
+20230403: Pythia: A Suite for Analyzing Large Language Models Across Training and Scaling (AleutherAI)
+(Used for Dolly)
+Research Paper: https://arxiv.org/pdf/2304.01373.pdf
+
+20230403: Koala: A Dialogue Model for Academic Research (Berkeley)
+"We introduce Koala, a chatbot trained by fine-tuning Meta’s LLaMA on dialogue data gathered from the web. To construct Koala, we curated our training set by gathering dialogue data from the web and public datasets."
+https://bair.berkeley.edu/blog/2023/04/03/koala/
+The fine-tuning dataset is large and a combination of ShareGPT, HC3, OIG, Stanford Alpaca, Anthropic HH, OpenAI WebGPT, OpenAI Summarization.
+Demo: https://koala.lmsys.org/
+Training Framework: https://github.com/young-geng/EasyLM
+Github: https://github.com/young-geng/EasyLM/blob/main/docs/koala.md
+
+20230412 Free Dolly
+"Introducing the World's First Truly Open Instruction-Tuned LLM"
+https://www.databricks.com/blog/2023/04/12/dolly-first-open-commercially-viable-instruction-tuned-llm
+"Dolly 2.0 is a 12B parameter language model based on the EleutherAI pythia model family and fine-tuned exclusively on a new, high-quality human generated instruction following dataset, crowdsourced among Databricks employees."
+Instruction set: https://huggingface.co/datasets/databricks/databricks-dolly-15k
+Dataset: https://huggingface.co/databricks
+Github: https://github.com/databrickslabs/dolly/tree/master/data
+
+20230414: OpenAssistant Conversations -- Democratizing Large Language Model Alignment
+"In an effort to democratize research on large-scale alignment, we release OpenAssistant Conversations, a human-generated, human-annotated assistant-style conversation corpus consisting of 161,443 messages distributed across 66,497 conversation trees, in 35 different languages, annotated with 461,292 quality ratings. The corpus is a product of a worldwide crowd-sourcing effort involving over 13,500 volunteers."
+Research Paper: https://arxiv.org/pdf/2304.07327.pdf
+
+20230417: RedPajama
+"a project to create leading open-source models, starts by reproducing LLaMA training dataset of over 1.2 trillion tokens."
+https://www.together.xyz/blog/redpajama
+https://www.together.xyz/blog/redpajama-training-progress
+Released a training data-set "RedPajama-Data: An Open Source Recipe to Reproduce LLaMA training dataset"
+Github: https://github.com/togethercomputer/RedPajama-Data
+Dataset: https://huggingface.co/datasets/togethercomputer/RedPajama-Data-1T
+
+20230418: auto-gpt-web: AutoGPT Website
+"Set Your Goals, AI Achieves Them. You can set up the initial role and goals for your AI buddy, without human's supervision, it will automatically leverage all of the resources it has to achieve your goal."
+Github: https://github.com/jina-ai/auto-gpt-web
+
+20230419: Scaling Transformer to 1M tokens and beyond with RMT
+"We enhance BERT by incorporating token-based memory storage and segment-level recurrence with recurrent memory (RMT). We demonstrate that the memory-augmented BERT can be trained to tackle tasks on sequences with lengths up to seven times its originally designed input length (512 tokens). We discovered the trained RMT’s capacity to successfully extrapolate to tasks of varying lengths, including those exceeding 1 million tokens with linear scaling of computations required."
+Research Paper: https://arxiv.org/pdf/2304.11062.pdf
+
+20230426: HuggingChat: Making the best open source AI chat models available to everyone.
+https://huggingface.co/chat
+Uses in v0 the model
+as base model: https://huggingface.co/OpenAssistant/oasst-sft-6-llama-30b-xor
+for fine-tuning: https://huggingface.co/datasets/OpenAssistant/oasst1
+The model is distributed as xor-weights of the fine-tuned data set for the original llama30b model, which cannot be distributed for copyright reason.
+
+20230426: Harnessing the Power of LLMs in Practice: A Survey on ChatGPT and Beyond
+"This paper presents a comprehensive and practical guide for practitioners and end-users working with Large Language Models (LLMs) in their downstream natural language processing (NLP) tasks."
+Research Paper: https://arxiv.org/pdf/2304.13712.pdf
+
+20230505: Introducing MPT-7B: A New Standard for Open-Source, Commercially Usable LLMs
+MPT is a emnhanced transformer based on memory-architecture-aware math for training processes (via FlashAttention and FasterTransformer). It speeds up training by factor 8. Models are published together with a code foundry for training and fine-tuning. Training cost was only ~$200k. Furthermore a technique for long inputs (ALiBi) was used and trained for a model with 64k token lengths.
+Blog: https://www.mosaicml.com/blog/mpt-7b
+Huggingface Model: https://huggingface.co/mosaicml/mpt-7b
+Github: https://github.com/mosaicml/llm-foundry
+
+20230317: Tree of Thoughts: Deliberate Problem Solving with Large Language Models (Google + Princeton)
+"we introduce a new framework for language model inference, Tree of Thoughts (ToT), which generalizes over the popular Chain of Thought approach to prompting language models, and enables exploration over coherent units of text (thoughts) that serve as intermediate steps toward problem solving."
+Research Paper: https://arxiv.org/pdf/2305.10601.pdf
+Github: https://github.com/princeton-nlp/tree-of-thought-llm
+
+20230519: Manticore 13B - uncensored model from OpenAccess AI Collective
+https://www.reddit.com/r/LocalLLaMA/comments/13lbyiw/manticore_13b_updated_model_from_openaccess_ai/
+https://huggingface.co/openaccess-ai-collective/wizard-mega-13b
+renamed to https://huggingface.co/openaccess-ai-collective/manticore-13b
+4bit model: https://huggingface.co/TheBloke/wizard-mega-13B-GGML
+Training Framework: https://github.com/OpenAccess-AI-Collective/axolotl
+Discord: https://discord.com/channels/1104757954588196865/1107775871428870177
+Testbed:
+    https://colab.research.google.com/drive/1UFQDmQlGtJZZhky2YlFHNmioza_yCKTp?usp=sharing
+    https://colab.research.google.com/drive/1aJS4kVIpA814dK4H9FBH2MZZByR3XDq0?usp=sharing
+    https://colab.research.google.com/drive/1UFQDmQlGtJZZhky2YlFHNmioza_yCKTp?usp=sharing
+    
+20230523 Goat: Fine-tuned LLaMA Outperforms GPT-4 on Arithmetic Tasks
+Research Paper: https://arxiv.org/pdf/2305.14201.pdf
+Tweet: https://twitter.com/_akhaliq/status/1661176179741831169
+Huggingface: https://huggingface.co/papers/2305.14201
+(no code, no model to download??)
+
+20230529: Direct Preference Optimization: Your Language Model is Secretly a Reward Model
+"We leverage a mapping between reward functions and optimal policies to show that this constrained reward maximization problem can be optimized exactly with a single stage of policy training, essentially solving a classification problem on the human preference data. The resulting algorithm, which we call Direct Preference Optimization (DPO), is stable, performant, and computationally lightweight, eliminating the need for fitting a reward model, sampling from the LM during fine-tuning, or performing significant hyperparameter tuning."
+Research Paper: https://arxiv.org/pdf/2305.18290.pdf
+
+20230531: Let's Verify Step by Step (OpenAI)
+"To train more reliable models, we can turn either to outcome supervision, which provides feedback for a final result, or process supervision, which provides feedback for each intermediate reasoning step. Given the importance of training reliable models, and given the high cost of human feedback, it is important to carefully compare the both methods. Recent work has already begun this comparison, but many questions still remain. We conduct our own investigation, finding that process supervision significantly outperforms outcome supervision for training models to solve problems from the challenging MATH dataset. Our process-supervised model solves 78% of problems from a representative subset of the MATH test set. Additionally, we show that active learning significantly improves the efficacy of process supervision."
+Research Paper: https://arxiv.org/pdf/2305.20050.pdf
+Dataset: https://github.com/openai/prm800k
+
+20230605: Orca: Progressive Learning from Complex Explanation Traces of GPT-4 (Microsoft)
+"we develop Orca, a 13-billion parameter model that learns to imitate the reasoning process of LFMs. Orca learns from rich signals from GPT-4 including explanation traces; step-by-step thought processes; and other complex instructions, guided by teacher assistance from ChatGPT."
+Research Paper: https://arxiv.org/pdf/2306.02707.pdf
+Publication Link: https://aka.ms/orca-lm
+
+20230613: Function Calling (OpenAI)
+OpenAI announces Function Calling concept: https://openai.com/blog/function-calling-and-other-api-updates
+API Doc: https://platform.openai.com/docs/guides/function-calling/introduction
+

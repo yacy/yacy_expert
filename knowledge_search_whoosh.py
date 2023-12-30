@@ -1,5 +1,6 @@
 import os
 import json
+import jsonloader
 from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
 from whoosh.fields import Schema, TEXT, ID, STORED
@@ -27,27 +28,32 @@ ix = storage.create_index(schema) # Create an index with RamStorage
 
 # Load JSON documents from the "knowledge" folder into the Whoosh index
 def load_documents_into_index(knowledge_folder):
-    writer = ix.writer()
+    #writer = ix.writer(limitmb=1024, procs=16, multisegment=True)
+    writer = ix.writer(limitmb=8192)
+
+    # Set the cachesize to -1 to indicate unbounded caching
+    #stem_ana = writer.schema["content"].format.analyzer
+    #stem_ana.cachesize = -1
+    #stem_ana.clear()
+
     for filename in os.listdir(knowledge_folder):
-        if filename.endswith(".jsonl") or filename.endswith(".flatjson"):
+        if filename.endswith(".jsonl") or filename.endswith(".flatjson") or filename.endswith(".jsonl.gz") or filename.endswith(".flatjson.gz"):
             filepath = os.path.join(knowledge_folder, filename)
             print("reading index dump from " + filepath)
+            json_data = jsonloader.load(filepath)
             n = 0
-            with open(filepath, "r") as f:
-                for line in f:
-                    doc = json.loads(line.strip())
-                    if "index" in doc:
-                        continue # skip this line
-                    writer.add_document(
-                        title=doc.get("title", ""),
-                        content=doc.get("text_t", ""),
-                        url=doc.get("url", doc.get("url_s", doc.get("sku", ""))),
-                        pubDate=doc.get("pubDate", "")
-                    )
-                    n += 1
-                    if n > 1000:
-                        break
-    writer.commit()
+            for doc in json_data:
+                if "index" in doc:
+                    continue # skip this line
+                writer.add_document(
+                    title=doc.get("title", ""),
+                    content=doc.get("text_t", ""),
+                    url=doc.get("url", doc.get("url_s", doc.get("sku", ""))),
+                    pubDate=doc.get("pubDate", "")
+                )
+                n += 1
+                #if n > 1000: break
+    writer.commit(optimize=True)
     
 # Load documents into the index
 knowledge_folder = "knowledge"  # Folder containing JSON documents

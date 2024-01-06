@@ -17,28 +17,33 @@ from concurrent.futures import ThreadPoolExecutor
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 # Data structures for the inverted index
-documents = {}  # Key: id (a counter), Value: full Document data (title, content, etc.)
-search_index = {} # Key: field name, Value: inverted index for that field and avgdl in a dict
-total_docs = 0 # Counter for assigning unique ids to documents
+__documents = {}  # Key: id (a counter), Value: full Document data (title, content, etc.)
+__search_index = {} # Key: field name, Value: inverted index for that field and avgdl in a dict
+__total_docs = 0 # Counter for assigning unique ids to documents
 
 # metrics for BM25
-k1 = 1.2
-b = 0.75
+K1 = 1.2
+B = 0.75
 
-def clean_text(text):
-    text = text.replace("\n", " ").replace("\r", " ").replace("\t, ", " ").replace("-", " ").replace("#", " ").replace("[", " ").replace("]", " ")
-    text = text.lower().strip().split()
-    return text
+DELCHARS = "'()-+*/\n\r\t-#.,?![\\]^_{|}~"
+TRANSLATION = str.maketrans(DELCHARS, " " * len(DELCHARS))
+
+MAXHITS = 100
+
+def tokenizer(text):
+    text = text.translate(TRANSLATION)
+    query_keys = text.lower().strip().split()
+    return query_keys
 
 def define_index(fieldname):
     indexdefinition = {}
     indexdefinition["index"] = {}
     indexdefinition["avgdl"] = 0.0
-    search_index[fieldname] = indexdefinition
+    __search_index[fieldname] = indexdefinition
 
 # add a text to the index and return the number of words in the text
-def reverse_index(index, text, id):
-    words = clean_text(text)
+def __reverse_index(index, text, id):
+    words = tokenizer(text)
     tf = {}
     
     # term frequency: count the number of appearances of each word in the text
@@ -58,33 +63,49 @@ def reverse_index(index, text, id):
     return len(words)
 
 def add_to_index(doc):
-    global search_index, total_docs, avgdl_title, avgdl_text
+    global __search_index, __total_docs
 
     # store the document
-    id = total_docs
-    documents[id] = doc
-    total_docs += 1
+    id = __total_docs
+    __documents[id] = doc
+    __total_docs += 1
 
     # iterate over all index fields
-    for fieldname in search_index:
-        indexentry = search_index[fieldname]
+    for fieldname in __search_index:
+        indexentry = __search_index[fieldname]
         index = indexentry["index"]
         avgdl = indexentry["avgdl"]
-        dlen = reverse_index(index, doc.get(fieldname, ""), id)
+        dlen = __reverse_index(index, doc.get(fieldname, ""), id)
         doc[fieldname + "_dlen"] = dlen
         avgdl += dlen
         indexentry["avgdl"] = avgdl
 
 def finish_indexing():
-    for fieldname in search_index:
-        indexentry = search_index[fieldname]
-        indexentry["avgdl"] = indexentry["avgdl"] / total_docs
-        logging.info(f"Index field '{fieldname}' has {len(indexentry.get("index", {}))} entries with average doc length {indexentry.get("avgdl", 0)}.")
+    for fieldname in __search_index:
+        fieldindex = __search_index[fieldname]
+        fieldindex["avgdl"] = fieldindex["avgdl"] / __total_docs
+        logging.info(f"Index field '{fieldname}' has {len(fieldindex.get("index", {}))} entries with average doc length {fieldindex.get("avgdl", 0)}.")
         #logging.info(f"Sample entries for '{fieldname}': {list(indexentry['index'].items())[:1]}")
+
+        # iterate over all words in the index and sort the list of (id, count) tuples
+        index = fieldindex["index"]
+        index_size = {}
+        fieldindex["index_size"] = index_size
+        for word in index:
+            # sort the list of (id, count) tuples by count in descending order
+            index[word].sort(key=lambda x: x[1], reverse=True)
+            
+            # we must preserve the original length of the list for the IDF scoring
+            index_size[word] = len(index[word])
+
+            # now as that lists is sorted and the length was remembered, we can truncate the list to a maximum length of MAXHITS
+            index[word] = index[word][:MAXHITS]
+
+            #print(f"Word '{word}': {index[word]}")
 
 # Load JSON documents from the "knowledge" folder into the index
 def load_documents_into_index(knowledge_folder, allowed_keys):
-    global total_docs, avgdl_title, avgdl_text
+    global __total_docs
     for filename in os.listdir(knowledge_folder):
         if filename.endswith(".jsonl") or filename.endswith(".flatjson") or filename.endswith(".jsonl.gz") or filename.endswith(".flatjson.gz"):
             filepath = os.path.join(knowledge_folder, filename)
@@ -116,45 +137,50 @@ def load_documents_into_index(knowledge_folder, allowed_keys):
     # finish indexing: compute average document length
     finish_indexing()
 
-def retrieve4index(query_keys, index, index_dlen_name, avgdl):
+def __retrieve4index(query_keys, fieldname, maxcount):
     # collect matching ids and count how often they appear for each word
     # first iterate over all words in the query
     matching_ids = {} # this holds the term frequency for each id of that key
+    fieldindex = __search_index[fieldname]
+    avgdl = fieldindex["avgdl"]
+    index = fieldindex["index"]
+    index_size = fieldindex["index_size"]
     for key in query_keys:
         if key in index:
             index4key = index[key]
+
+            # compute the IDF part
+            len_index4key = index_size[key]
+            logging.info(f"Field '{fieldname}' has {len_index4key} matches for keys {key}.")
+            idf_bm25 = math.log((__total_docs - len_index4key + 0.5) / (len_index4key + 0.5) + 1.0)
+
+            # iterate over all (id, count) tuples for that key to compute the TF part
             for id, count in index4key:
-                if id in documents:
-                    doc = documents[id]
-                    dlen = doc.get(index_dlen_name, 0)
-                    # now we have everything to compute the BM25 TF part
-                    tf = count * (k1 + 1) / (count + k1 * (1 - b + b * (dlen / avgdl)))
-                    # compute the IDF part
-                    len_index4key = len(index4key)
-                    idf = math.log((total_docs - len_index4key + 0.5) / (len_index4key + 0.5) + 1.0)
+                if id in __documents:
+                    doc = __documents[id]
+                    dlen = doc.get(fieldname + "_dlen", 0)
+                    # compute the BM25 TF part
+                    tf_bm25 = count * (K1 + 1) / (count + K1 * (1 - B + B * (dlen / avgdl)))
                     if id in matching_ids:
-                        matching_ids[id] += idf * tf
+                        matching_ids[id] += idf_bm25 * tf_bm25
                     else:
-                        matching_ids[id] = idf * tf
+                        matching_ids[id] = idf_bm25 * tf_bm25
+        if len(matching_ids) >= maxcount:
+            break
 
     # return the dictionary with the matching ids and their score
-    # logging.info(f"BM25 scores for query keys {query_keys} in index {index}: {matching_ids}")
+    logging.info(f"BM25 scores for query keys {query_keys} in index {fieldname}: {matching_ids}")
     return matching_ids
 
-def retrieve(query_keys, boostdict):
+def retrieve(query_keys, boostdict, maxcount):
     logging.info(f"Search started for query keys {query_keys}")
 
     # loop over index fields
     matching_ids = {}
-    for fieldname in search_index:
+    for fieldname in __search_index:
         boost = boostdict.get(fieldname, 0.0)
         if (boost <= 0.0): continue
-        indexentry = search_index[fieldname]
-        index = indexentry["index"]
-        avgdl = indexentry["avgdl"]
-        this_matching_ids = retrieve4index(query_keys, index, fieldname + "_dlen", avgdl)
-        logging.info(f"Field '{fieldname}' has {len(this_matching_ids)} matches")
-
+        this_matching_ids = __retrieve4index(query_keys, fieldname, maxcount)
         for id in this_matching_ids:
             if id in matching_ids:
                 matching_ids[id] += boost * this_matching_ids[id]
@@ -165,7 +191,13 @@ def retrieve(query_keys, boostdict):
     # Sort the dictionary by values in descending order
     sorted_ids_with_scores = sorted(matching_ids.items(), key=lambda item: item[1], reverse=True)
 
+    # limit the number of results to maxcount
+    if len(sorted_ids_with_scores) > maxcount:
+        sorted_ids_with_scores = sorted_ids_with_scores[:maxcount]
     return sorted_ids_with_scores
+
+def get_document(id):
+    return __documents.get(id, {})
 
 # Function to compute cosine similarity
 def compute_similarity(query, documents_text):
@@ -176,9 +208,25 @@ def compute_similarity(query, documents_text):
 
 if __name__ == '__main__':
     # test
+
+    # define the index
+    define_index("title")
+    define_index("text_t")
+
+    # start indexing
     knowledge_folder = "knowledge"  # Folder containing JSON documents
     allowed_keys = ["url", "title", "keywords", "text_t"]
     load_documents_into_index(knowledge_folder, allowed_keys)
+
+    # start search
+    query="frankfurt"
+    query_keys = tokenizer(query)
     boost = {"title": 5, "text_t": 1}
-    sorted_ids = retrieve(clean_text("hilfe"), boost)
-    logging.info(f"Search results: {sorted_ids}")
+    count = 50
+    sorted_ids = retrieve(query_keys, boost, count)
+    logging.info(f"Search results: {len(sorted_ids)}")
+    for id, score in sorted_ids:
+        # get the document
+        doc = get_document(id)
+        logging.info(f"Document {id} has score {score} and title {doc.get('title', '')}")
+

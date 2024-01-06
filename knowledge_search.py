@@ -16,15 +16,15 @@ def yacysearch():
     # Parse query and count from the request
     if request.method == 'GET':
         query = request.args.get('query', '')
-        count = int(request.args.get('count', '3'))
+        count = int(request.args.get('count', '20'))
     elif request.method == 'POST':
         data = request.get_json()
         query = data.get('query', '')
-        count = int(data.get('count', '3'))
+        count = int(data.get('count', '20'))
 
-    query_words = nocdex.clean_text(query)
+    query_keys = nocdex.tokenizer(query)
     boost = {"title": 5, "text_t": 1}
-    sorted_ids_with_scores = nocdex.retrieve(query_words, boost)
+    sorted_ids_with_scores = nocdex.retrieve(query_keys, boost)
     logging.info(f"Search results: {len(sorted_ids_with_scores)}")
 
     # Extract document content for similarity computation
@@ -32,7 +32,7 @@ def yacysearch():
     for id, score in sorted_ids_with_scores:
 
         # get the document
-        doc = nocdex.documents.get(id, {})
+        doc = nocdex.get_document(id)
         if doc:
             result = {
                 "title": doc.get("title", ""),
@@ -62,8 +62,8 @@ def yacysearch():
         ]
     }
 
-    # Return the response as JSON
-    return jsonify(yacy_results)
+    # Return the response as JSON with correct MIME type
+    return Response(json.dumps(yacy_results), mimetype='application/json')
 
 
 # Run the Flask app
